@@ -1,0 +1,39 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+#
+# Run KSPP kernel config hardening checker
+# https://github.com/a13xp0p0v/kconfig-hardened-check.git
+
+name: Kernel Config Checker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Run kconfig check
+      run: |
+        set -x
+        set -e
+        KSPP_DIR=$(mktemp -d)
+        SOURCE_DIR=$(pwd)
+        OUTPUT_DIR=$SOURCE_DIR/output
+        mkdir -p $OUTPUT_DIR
+        pushd $KSPP_DIR
+        git clone https://github.com/a13xp0p0v/kconfig-hardened-check.git
+        cd kconfig-hardened-check
+        bin/kconfig-hardened-check -c $SOURCE_DIR/SPECS/kernel/config 2>&1 | tee $OUTPUT_DIR/kernel-x86_64-check.log
+        bin/kconfig-hardened-check -c $SOURCE_DIR/SPECS/kernel/config_aarch64 2>&1 | tee $OUTPUT_DIR/kernel-aarch64-check.log
+        bin/kconfig-hardened-check -c $SOURCE_DIR/SPECS/kernel-hyperv/config 2>&1 | tee $OUTPUT_DIR/kernel-hyperv-x86_64-check.log
+
+    - name: Upload results
+      uses: actions/upload-artifact@v2.1.4
+      with:
+        name: kconfig-check-results
+        path: output
