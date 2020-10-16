@@ -27,6 +27,7 @@ DOWNLOAD_SRPMS                  ?= n
 REBUILD_TOOLS                   ?= n
 RUN_CHECK                       ?= n
 USE_UPDATE_REPO                 ?= y
+USE_PREVIEW_REPO                ?= n
 DISABLE_UPSTREAM_REPOS          ?= n
 TOOLCHAIN_CONTAINER_ARCHIVE     ?=
 TOOLCHAIN_ARCHIVE               ?=
@@ -84,11 +85,21 @@ toolchain_rpms_dir := $(CACHED_RPMS_DIR)/cache/
 endif
 
 # External source server
-SOURCE_URL         ?= 
-PACKAGE_URL        ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/base/$(build_arch)/rpms
-PACKAGE_UPDATE_URL ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/update/$(build_arch)/rpms
-SRPM_URL           ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/base/srpms
-SRPM_UPDATE_URL    ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/update/srpms
+SOURCE_URL         ?=
+
+PACKAGE_URL_LIST   ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/base/$(build_arch)/rpms
+SRPM_URL_LIST      ?= https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/base/srpms
+
+ifeq ($(USE_UPDATE_REPO),y)
+PACKAGE_URL_LIST   += https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/update/$(build_arch)/rpms
+SRPM_URL_LIST      += https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/update/srpms
+endif
+
+ifeq ($(USE_PREVIEW_REPO),y)
+PACKAGE_URL_LIST   += https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/preview/$(build_arch)/rpms
+SRPM_URL_LIST      += https://packages.microsoft.com/cbl-mariner/$(RELEASE_MAJOR_ID)/prod/preview/srpms
+endif
+
 REPO_LIST   ?=
 CA_CERT     ?=
 TLS_CERT    ?=
@@ -97,11 +108,15 @@ TLS_KEY     ?=
 # Build defines
 DIST_TAG           ?= .cm1
 BUILD_NUMBER       ?= $(shell git rev-parse --short HEAD)
+# an empty BUILD_NUMBER breaks the build later on
+ifeq ($(BUILD_NUMBER),)
+        BUILD_NUMBER = non-git
+endif
 RELEASE_MAJOR_ID   ?= 1.0
 # use minor ID defined in file (if exist) otherwise define it
 # note this file must be single line
-ifneq ($(wildcard $(OUT_DIR)/version-minor-id.txt),)
-	RELEASE_MINOR_ID ?= .$(shell cat $(OUT_DIR)/version-minor-id.txt)
+ifneq ($(wildcard $(OUT_DIR)/version-minor-id.config),)
+	RELEASE_MINOR_ID ?= .$(shell cat $(OUT_DIR)/version-minor-id.config)
 else
 	RELEASE_MINOR_ID ?= .$(shell date +'%Y%m%d.%H%M')
 endif
