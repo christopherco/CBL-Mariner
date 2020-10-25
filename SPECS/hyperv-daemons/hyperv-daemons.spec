@@ -16,7 +16,7 @@ URL:            https://github.com/microsoft/WSL2-Linux-Kernel
 Group:          System/Kernel
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
-Source0:        https://github.com/microsoft/WSL2-Linux-Kernel/archive/linux-msft-%{version}.tar.gz
+Source0:        https://github.com/microsoft/WSL2-Linux-Kernel/archive/linux-%{version}.tar.xz
 
 # HYPERV KVP DAEMON
 Source1:  hypervkvpd.service
