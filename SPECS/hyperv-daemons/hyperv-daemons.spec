@@ -109,7 +109,7 @@ BuildArch:  noarch
 Contains tools and scripts useful for Hyper-V guests.
 
 %prep
-%setup -q -n WSL2-Linux-Kernel-linux-msft-%{version}
+%setup -q -n linux-%{version}
 
 %build
 pushd tools/hv

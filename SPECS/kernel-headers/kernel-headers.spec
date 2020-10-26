@@ -12,12 +12,12 @@ BuildArch:      noarch
 %description
 The Linux API Headers expose the kernel's API for use by Glibc.
 %prep
-%setup -q -n WSL2-Linux-Kernel-linux-msft-%{version}
+%setup -q -n linux-%{version}
 %build
 make mrproper
 make headers_check
 %install
-cd %{_builddir}/WSL2-Linux-Kernel-linux-msft-%{version}
+cd %{_builddir}/linux-%{version}
 make headers
 find usr/include -name '.*' -delete
 rm usr/include/Makefile

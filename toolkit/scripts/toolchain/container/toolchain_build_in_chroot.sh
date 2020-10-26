@@ -58,7 +58,7 @@ set -e
 cd /sources
 
 echo Linux-5.4.72 API Headers
-tar xf linux-5.4.72.tar.gz
+tar xf linux-5.4.72.tar.xz
 pushd linux-5.4.72
 make mrproper
 make headers

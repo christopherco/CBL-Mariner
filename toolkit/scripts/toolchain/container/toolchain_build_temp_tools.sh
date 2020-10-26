@@ -114,7 +114,7 @@ rm -rf gcc-9.1.0
 touch $LFS/logs/temptoolchain/status_gcc_pass1_complete
 
 echo Linux-5.4.72 API Headers
-tar xf linux-5.4.72.tar.gz
+tar xf linux-5.4.72.tar.xz
 pushd linux-5.4.72
 make mrproper
 make headers

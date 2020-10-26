@@ -78,7 +78,7 @@ Requires:       audit
 This package contains the 'perf' performance analysis tools for Linux kernel.
 
 %prep
-%setup -q -n WSL2-Linux-Kernel-linux-msft-%{version}
+%setup -q -n linux-%{version}
 
 %build
 make mrproper
