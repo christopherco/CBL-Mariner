@@ -152,8 +152,7 @@ $(image_external_package_cache_summary): $(cached_file) $(go-imagepkgfetcher) $(
 		--tls-cert=$(TLS_CERT) \
 		--tls-key=$(TLS_KEY) \
 		$(foreach repo, $(imagefetcher_local_repo) $(imagefetcher_cloned_repo) $(REPO_LIST),--repo-file="$(repo)" ) \
-		$(imagepkgfetcher_update_repo_flag) \
-		$(imagepkgfetcher_disable_upstream_repos_flag) \
+		$(imagepkgfetcher_extra_flags) \
 		--input-summary-file=$(IMAGE_CACHE_SUMMARY) \
 		--output-summary-file=$@ \
 		--output-dir=$(external_rpm_cache)
@@ -177,6 +176,7 @@ iso: $(go-isomaker) $(go-liveinstaller) $(go-imager) $(depend_CONFIG_FILE) $(CON
 		--resources $(RESOURCES_DIR) \
 		--iso-repo $(local_and_external_rpm_cache) \
 		--log-level $(LOG_LEVEL) \
+		--log-file $(LOGS_DIR)/imggen/isomaker.log \
 		$(if $(UNATTENDED_INSTALLER),--unattended-install) \
 		--output-dir $(artifact_dir) \
 		--image-tag=$(IMAGE_TAG)
