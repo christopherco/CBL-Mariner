@@ -3,7 +3,7 @@
 Summary:        Linux Kernel
 Name:           kernel
 Version:        5.4.72
-Release:        5%{?dist}
+Release:        6%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -100,6 +100,7 @@ Patch1073:      CVE-1999-0656.nopatch
 Patch1074:      CVE-2010-4563.nopatch
 Patch1075:      CVE-2019-20794.nopatch
 Patch1076:      CVE-1999-0524.nopatch
+Patch1077:      CVE-2020-25705.patch
 BuildRequires:  audit-devel
 BuildRequires:  bc
 BuildRequires:  diffutils
@@ -188,6 +189,8 @@ This package contains the 'perf' performance analysis tools for Linux kernel.
 
 %patch1 -p1
 %patch2 -p1
+%patch1077 -p1
+%patch1078 -p1
 
 %build
 make mrproper
@@ -408,6 +411,9 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 %{_libdir}/perf/include/bpf/*
 
 %changelog
+* Thu Dec 03 2020 Chris Co <chrco@microsoft.com> - 5.4.72-6
+- Address CVE-2020-25705
+
 * Wed Nov 25 2020 Chris Co <chrco@microsoft.com> - 5.4.72-5
 - Add patch to publish efi tpm event log on ARM
 
