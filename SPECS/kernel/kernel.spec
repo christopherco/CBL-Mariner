@@ -101,6 +101,7 @@ Patch1074:      CVE-2010-4563.nopatch
 Patch1075:      CVE-2019-20794.nopatch
 Patch1076:      CVE-1999-0524.nopatch
 Patch1077:      CVE-2020-25705.patch
+Patch1078:      CVE-2020-28974.patch
 BuildRequires:  audit-devel
 BuildRequires:  bc
 BuildRequires:  diffutils
@@ -412,7 +413,7 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 
 %changelog
 * Thu Dec 03 2020 Chris Co <chrco@microsoft.com> - 5.4.72-6
-- Address CVE-2020-25705
+- Address CVE-2020-25705, CVE-2020-28974
 
 * Wed Nov 25 2020 Chris Co <chrco@microsoft.com> - 5.4.72-5
 - Add patch to publish efi tpm event log on ARM
