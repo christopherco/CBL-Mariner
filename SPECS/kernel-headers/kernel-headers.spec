@@ -1,7 +1,7 @@
 Summary:        Linux API header files
 Name:           kernel-headers
-Version:        5.4.72
-Release:        1%{?dist}
+Version:        5.4.91
+Release:        3%{?dist}
 License:        GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -34,6 +34,30 @@ cp -rv usr/include/* /%{buildroot}%{_includedir}
 %{_includedir}/*
 
 %changelog
+* Thu Jan 28 2021 Nicolas Ontiveros <niontive@microsoft.com> - 5.4.91-3
+- Update to kernel release 5.4.91-3
+
+* Thu Jan 28 2021 Daniel McIlvaney <damcilva@microsoft.com> - 5.4.91-2
+- Update release number to match kernel spec
+
+* Wed Jan 20 2021 Chris Co <chrco@microsoft.com> - 5.4.91-1
+- Update source to 5.4.91
+
+* Tue Jan 12 2021 Rachel Menge <rachelmenge@microsoft.com> - 5.4.83-4
+- Update release number to match kernel spec
+
+* Sat Jan 09 2021 Andrew Phelps <anphel@microsoft.com> - 5.4.83-3
+- Update to kernel release 5.4.83-3
+
+* Mon Dec 28 2020 Nicolas Ontiveros <niontive@microsoft.com> - 5.4.83-2
+- Update to kernel release 5.4.83-2
+
+* Tue Dec 15 2020 Henry Beberman <henry.beberman@microsoft.com> - 5.4.83-1
+- Update source to 5.4.83
+
+* Fri Dec 04 2020 Chris Co <chrco@microsoft.com> - 5.4.81-1
+- Update source to 5.4.81
+
 * Mon Oct 26 2020 Chris Co <chrco@microsoft.com> - 5.4.72-1
 - Update source to 5.4.72
 - Add license file

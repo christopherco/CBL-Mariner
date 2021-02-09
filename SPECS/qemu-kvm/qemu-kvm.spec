@@ -1,7 +1,7 @@
 Summary:        QEMU is a machine emulator and virtualizer
 Name:           qemu-kvm
 Version:        4.2.0
-Release:        18%{?dist}
+Release:        24%{?dist}
 License:        GPLv2 AND GPLv2+ AND CC-BY AND BSD
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -30,6 +30,20 @@ Patch13:        CVE-2020-14364.patch
 Patch14:        CVE-2020-13791.patch
 # CVE-2018-19665 patch never merged upstream, link: https://lists.gnu.org/archive/html/qemu-devel/2018-11/msg03570.html
 Patch15:        CVE-2018-19665.patch
+Patch16:        CVE-2020-13361.patch
+Patch17:        CVE-2020-11869.patch
+Patch18:        CVE-2020-14415.patch
+Patch19:        CVE-2020-15859.patch
+Patch20:        CVE-2020-13362.patch
+Patch21:        CVE-2020-25742.patch
+Patch22:        CVE-2020-25743.patch
+Patch23:        CVE-2020-15469.patch
+Patch24:        CVE-2020-24352.patch
+# CVE-2020-12820 only affects powerpc and SuperH emulation (see .nopatch file for details). Resloved fully in qemu >=5.0.0
+Patch25:        CVE-2020-12829.nopatch
+Patch26:        CVE-2018-12617.patch
+Patch27:        CVE-2020-25723.patch
+Patch28:        CVE-2020-27821.patch
 BuildRequires:  alsa-lib-devel
 BuildRequires:  glib-devel
 BuildRequires:  pixman-devel
@@ -71,6 +85,18 @@ This package provides a command line tool for manipulating disk images.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
 
 %build
 
@@ -131,6 +157,32 @@ chmod 755 %{buildroot}%{_bindir}/qemu
 %{_bindir}/qemu-nbd
 
 %changelog
+* Wed Jan 13 2021 Henry Li <niontive@microsoft.com> - 4.2.0-24
+- Update CVE-2020-15469
+
+* Fri Dec 11 2020 Nicolas Ontiveros <niontive@microsoft.com> - 4.2.0-23
+- Patch CVE-2020-27821
+
+* Tue Dec 08 2020 Nicolas Ontiveros <niontive@microsoft.com> - 4.2.0-22
+- Patch CVE-2020-25723
+
+* Tue Nov 17 2020 Daniel McIlvaney <damcilva@microsoft.com> - 4.2.0-21
+- Backport fix for CVE-2018-12617 from 5.0.0
+
+* Mon Nov 16 2020 Daniel McIlvaney <damcilva@microsoft.com> - 4.2.0-20
+- Noatch CVE-2020-12829, only affects SuperH and PowerPC emulation
+
+* Wed Nov 11 2020 Henry Li <lihl@microsoft.com> - 4.2.0-19
+- Patch CVE-2020-13361
+- Patch CVE-2020-11869
+- Patch CVE-2020-14415
+- Patch CVE-2020-15859
+- Patch CVE-2020-13362
+- Patch CVE-2020-25742
+- Patch CVE-2020-25743
+- Patch CVE-2020-15469
+- Patch CVE-2020-24352
+
 * Fri Oct 30 2020 Thomas Crain <thcrain@microsoft.com> - 4.2.0-18
 - Patch CVE-2018-19665
 - Remove nopatch files for CVE-2016-7161, CVE-2015-7504, CVE-2017-5931,

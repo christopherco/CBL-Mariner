@@ -58,7 +58,7 @@ $(STATUS_FLAGS_DIR)/build_srpms.flag: $(local_specs) $(local_spec_dirs) $(SPECS_
 	touch $@
 else
 $(STATUS_FLAGS_DIR)/build_srpms.flag: $(local_specs) $(local_spec_dirs) $(local_sources) $(SPECS_DIR) $(go-srpmpacker)
-	$(go-srpmpacker) \
+	GODEBUG=x509ignoreCN=0 $(go-srpmpacker) \
 		--dir=$(SPECS_DIR) \
 		--output-dir=$(BUILD_SRPMS_DIR) \
 		--source-url=$(SOURCE_URL) \
@@ -67,6 +67,8 @@ $(STATUS_FLAGS_DIR)/build_srpms.flag: $(local_specs) $(local_spec_dirs) $(local_
 		--tls-cert=$(TLS_CERT) \
 		--tls-key=$(TLS_KEY) \
 		--build-dir=$(BUILD_DIR)/SRPM_packaging \
-		--signature-handling=$(SRPM_FILE_SIGNATURE_HANDLING)
+		--signature-handling=$(SRPM_FILE_SIGNATURE_HANDLING) \
+		--log-file=$(LOGS_DIR)/pkggen/workplan/intermediate_srpms.log \
+		--log-level=$(LOG_LEVEL)
 	touch $@
 endif

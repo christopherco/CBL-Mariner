@@ -173,11 +173,11 @@ build_rpm_in_chroot_no_install () {
         srpmName=$(rpmspec -q $specPath --srpm --define="with_check 1" --define="dist $PARAM_DIST_TAG" --queryformat %{NAME}-%{VERSION}-%{RELEASE}.src.rpm)
         srpmPath=$MARINER_INPUT_SRPMS_DIR/$srpmName
         cp $srpmPath $CHROOT_SRPMS_DIR
-        chroot_and_run_rpmbuild $srpmName 2>&1 | tee $TOOLCHAIN_LOGS/$1.txt
+        chroot_and_run_rpmbuild $srpmName 2>&1 | awk '{ print strftime("time=\"%Y-%m-%dT%T%Z\""), $0; fflush(); }' | tee $TOOLCHAIN_LOGS/$srpmName.log
         cp $CHROOT_RPMS_DIR_ARCH/$1* $FINISHED_RPM_DIR
         cp $CHROOT_RPMS_DIR_NOARCH/$1* $FINISHED_RPM_DIR
         cp $srpmPath $MARINER_OUTPUT_SRPMS_DIR
-        echo NOT installing the package $1
+        echo NOT installing the package $srpmName
     fi
     echo "$1" >> $TOOLCHAIN_BUILD_LIST
 }
@@ -348,9 +348,16 @@ chroot_and_install_rpms libssh2
 build_rpm_in_chroot_no_install curl
 build_rpm_in_chroot_no_install libxml2
 
+# python-setuptools needs python-xml
+# python-xml is built by building python2
+chroot_and_install_rpms python-xml
+
 # cracklib needs python-setuptools
 chroot_and_install_rpms python-setuptools
 build_rpm_in_chroot_no_install cracklib
+
+# pam needs cracklib
+chroot_and_install_rpms cracklib
 
 build_rpm_in_chroot_no_install cmake
 build_rpm_in_chroot_no_install pam
@@ -377,9 +384,6 @@ build_rpm_in_chroot_no_install libsolv
 
 # glib needs perl-XML-Parser, python-xml
 chroot_and_install_rpms perl-XML-Parser
-
-# python-xml is built by building python2
-chroot_and_install_rpms python-xml
 
 build_rpm_in_chroot_no_install glib
 build_rpm_in_chroot_no_install libassuan
@@ -439,8 +443,6 @@ chroot_and_install_rpms ninja-build
 chroot_and_install_rpms gettext
 build_rpm_in_chroot_no_install meson
 
-# libpwquality requires cracklib
-chroot_and_install_rpms cracklib
 build_rpm_in_chroot_no_install libpwquality
 build_rpm_in_chroot_no_install json-c
 build_rpm_in_chroot_no_install libsepol

@@ -8,7 +8,7 @@
 %global udev_prefix 70
 Summary:        Hyper-V daemons suite
 Name:           hyperv-daemons
-Version:        5.4.72
+Version:        5.4.91
 Release:        1%{?dist}
 License:        GPLv2+
 Vendor:         Microsoft Corporation
@@ -19,6 +19,7 @@ Source0:        https://github.com/microsoft/WSL2-Linux-Kernel/archive/linux-msf
 # HYPERV KVP DAEMON
 Source1:        hypervkvpd.service
 Source2:        hypervkvp.rules
+Source3:        hv_set_ifconfig
 # HYPERV VSS DAEMON
 Source101:      hypervvssd.service
 Source102:      hypervvss.rules
@@ -32,7 +33,6 @@ Requires:       hypervvssd = %{version}-%{release}
 # Hyper-V is available only on x86 architectures
 # The base empty (a.k.a. virtual) package can not be noarch
 # due to http://www.rpm.org/ticket/78
-ExclusiveArch:  x86_64
 
 %description
 Suite of daemons that are needed when Linux guest
@@ -141,7 +141,7 @@ install -p -m 0644 %{SOURCE202} %{buildroot}%{_udevrulesdir}/%{udev_prefix}-hype
 mkdir -p %{buildroot}%{_libexecdir}/%{hv_kvp_daemon}
 install -p -m 0755 tools/hv/hv_get_dhcp_info.sh %{buildroot}%{_libexecdir}/%{hv_kvp_daemon}/hv_get_dhcp_info
 install -p -m 0755 tools/hv/hv_get_dns_info.sh %{buildroot}%{_libexecdir}/%{hv_kvp_daemon}/hv_get_dns_info
-install -p -m 0755 tools/hv/hv_set_ifconfig.sh %{buildroot}%{_libexecdir}/%{hv_kvp_daemon}/hv_set_ifconfig
+install -p -m 0755 %{SOURCE3} %{buildroot}%{_libexecdir}/%{hv_kvp_daemon}/hv_set_ifconfig
 # Directory for pool files
 mkdir -p %{buildroot}%{_sharedstatedir}/hyperv
 
@@ -218,6 +218,24 @@ fi
 %{_sbindir}/lsvmbus
 
 %changelog
+* Wed Jan 20 2021 Chris Co <chrco@microsoft.com> - 5.4.91-1
+- Update source to 5.4.91
+
+* Mon Dec 28 2020 Nicolas Ontiveros <niontive@microsoft.com> - 5.4.83-2
+- Update to kernel release 5.4.83-2
+
+* Tue Dec 15 2020 Henry Beberman <henry.beberman@microsoft.com> - 5.4.83-1
+- Update source to 5.4.83
+
+* Fri Dec 04 2020 Chris Co <chrco@microsoft.com> - 5.4.81-1
+- Update source to 5.4.81
+
+* Fri Nov 20 2020 Johnson George <johgeorg@microsoft.com> - 5.4.72-3
+- Added network configure script to support ip injection
+
+* Wed Nov 11 2020 Suresh Babu Chalamalasetty <schalam@microsoft.com> - 5.4.72-2
+- Enable Hyper-V daemons package building for Arm64 arch
+
 * Mon Oct 26 2020 Chris Co <chrco@microsoft.com> - 5.4.72-1
 - Update source to 5.4.72
 - Lint spec

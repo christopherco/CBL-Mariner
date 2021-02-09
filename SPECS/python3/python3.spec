@@ -2,7 +2,7 @@
 Summary:        A high-level scripting language
 Name:           python3
 Version:        3.7.9
-Release:        2%{?dist}
+Release:        4%{?dist}
 License:        PSF
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -14,6 +14,7 @@ Patch1:         python3-support-mariner-platform.patch
 Patch2:         Replace-unsupported-TLS-methods.patch
 # CVE-2020-27619 patch is pulled from upstream commit
 Patch3:         CVE-2020-27619.patch
+Patch4:         CVE-2021-3177.patch
 BuildRequires:  bzip2-devel
 BuildRequires:  expat-devel >= 2.1.0
 BuildRequires:  libffi-devel >= 3.0.13
@@ -120,6 +121,7 @@ The PyPA recommended tool for installing Python packages.
 Summary:        Download, build, install, upgrade, and uninstall Python packages.
 Group:          Development/Tools
 Requires:       python3 = %{version}-%{release}
+Requires:       python3-xml
 BuildArch:      noarch
 
 %description    setuptools
@@ -134,11 +136,7 @@ Requires:       python3 = %{version}-%{release}
 The test package contains all regression tests for Python as well as the modules test.support and test.regrtest. test.support is used to enhance your tests while test.regrtest drives the testing suite.
 
 %prep
-%setup -q -n Python-%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
+%autosetup -p1 -n Python-%{version}
 
 %build
 export OPT="%{optflags} %{openssl_flags}"
@@ -172,6 +170,8 @@ make  %{?_smp_mflags} test
 
 %clean
 rm -rf %{buildroot}/*
+
+
 
 
 %files
@@ -263,6 +263,12 @@ rm -rf %{buildroot}/*
 %{_libdir}/python3.7/test/*
 
 %changelog
+* Fri Jan 29 2021 Nick Samson <nisamson@microsoft.com> - 3.7.9-4
+- Patched CVE-2021-3177 with backported patch. Moved to autosetup.
+
+* Mon Nov 16 2020 Pawel Winogrodzki <pawelwi@microsoft.com> - 3.7.9-3
+- Adding explicit runtime dependency on 'python3-xml' for the 'python3-setuptool' subpackage.
+
 * Fri Nov 06 2020 Thomas Crain <thcrain@microsoft.com> - 3.7.9-2
 - Patch CVE-2020-27619
 
