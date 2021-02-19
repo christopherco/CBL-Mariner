@@ -16,6 +16,7 @@
             "Name": "CBL-Mariner Virtualization Host",
             "PackageLists": [
                 "packagelists/hyperv-packages.json",
+                "packagelists/developer-packages.json",
                 "packagelists/virtualization-host-packages.json",
                 "packagelists/core-packages-image.json"
             ],
@@ -27,6 +28,7 @@
             "Name": "CBL-Mariner Core",
             "PackageLists": [
                 "packagelists/hyperv-packages.json",
+                "packagelists/developer-packages.json",
                 "packagelists/core-packages-image.json"
             ],
             "KernelOptions": {
