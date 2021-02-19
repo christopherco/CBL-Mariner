@@ -1,5 +1,53 @@
 %global security_hardening none
 %define uname_r %{version}-%{release}
+
+# Globals which should be in a macro file.
+# These should be set programatically in the future.
+%global _host_arch      x86_64
+%global _target_arch    aarch64
+
+%global _tuple          %{_target_arch}-%{_vendor}-linux-gnu
+%global _cross_name     %{_target_arch}-%{_vendor}-linux-gnu
+
+# Folders which should be in our macro file
+%global _opt                /opt/
+%global _crossdir           /opt/cross/
+
+# Generally we include '/usr' in most paths.
+# Can we also use '/usr' for our paths? This will bring us in line with the
+# %%configure macro which sets these.
+%global _bindir            /bin
+%global _sbindir           /sbin
+%global _libdir            /lib
+%global _lib64dir          /lib64
+%global _libexecdir        /libexec
+%global _datadir           /share
+%global _docdir            /share/doc
+%global _includedir        /include
+%global _infodir           /share/info
+%global _mandir            /share/man
+%global _oldincludedir     /include
+
+# If we want our cross compile aware packges to also support native, we
+# need logic to switch modes something like this:
+%if %{_target_arch} != %{_host_arch}
+%global _cross_prefix       %{_crossdir}%{_tuple}/
+%global _cross_sysroot      %{_crossdir}%{_tuple}/sysroot/
+%global _cross_includedir   /usr/%{_host}/%{_tuple}/include/
+%global _cross_infodir      %{_crossdir}%{_tuple}/share/info
+%global _cross_bindir       %{_tuple}/bin
+%global _cross_libdir       %{_tuple}/lib
+%global _tuple_name         %{_tuple}-
+%else
+%global _cross_prefix       %{nil}
+%global _cross_sysroot      %{nil}
+%global _cross_includedir   %{_includedir}
+%global _cross_infodir      %{_infodir}
+%global _cross_bindir       %{_bindir}
+%global _cross_libdir       %{_libdir}
+%global _tuple_name         %{nil}
+%endif
+
 Summary:        Linux Kernel
 Name:           kernel
 Version:        5.4.91
@@ -129,18 +177,39 @@ Patch1100:      CVE-2020-27777.nopatch
 Patch1101:      CVE-2020-29569.nopatch
 Patch1102:      CVE-2020-28374.nopatch
 Patch1103:      CVE-2020-36158.nopatch
-BuildRequires:  audit-devel
-BuildRequires:  bc
-BuildRequires:  diffutils
-BuildRequires:  glib-devel
-BuildRequires:  kbd
-BuildRequires:  kmod-devel
-BuildRequires:  libdnet-devel
-BuildRequires:  libmspack-devel
+# Do we need all these or should they just be assumed?
+BuildRequires:  patch
+BuildRequires:  make
+BuildRequires:  gcc
+BuildRequires:  glibc-devel
+BuildRequires:  binutils
+BuildRequires:  kernel-headers
+BuildRequires:  flex
+BuildRequires:  bison
 BuildRequires:  openssl-devel
-BuildRequires:  pam-devel
-BuildRequires:  procps-ng-devel
-BuildRequires:  xerces-c-devel
+BuildRequires:  bc
+# awk actually resolves to gawk package
+BuildRequires:  awk
+BuildRequires:  diffutils
+BuildRequires:  perl
+BuildRequires:  elfutils-libelf-devel
+#%if %%{_target_arch} != %%{_host_arch}
+#BuildRequires: %%{_cross_name}-binutils
+#BuildRequires: %%{_cross_name}-gcc
+#%endif
+###
+#BuildRequires:  audit-devel
+#BuildRequires:  bc
+#BuildRequires:  diffutils
+#BuildRequires:  glib-devel
+#BuildRequires:  kbd
+#BuildRequires:  kmod-devel
+#BuildRequires:  libdnet-devel
+#BuildRequires:  libmspack-devel
+#BuildRequires:  openssl-devel
+#BuildRequires:  pam-devel
+#BuildRequires:  procps-ng-devel
+#BuildRequires:  xerces-c-devel
 Requires:       filesystem
 Requires:       kmod
 Requires(post): coreutils
@@ -199,14 +268,14 @@ Requires:       %{name} = %{version}-%{release}
 Kernel driver for oprofile, a statistical profiler for Linux systems
 %endif
 
-%package tools
-Summary:        This package contains the 'perf' performance analysis tools for Linux kernel
-Group:          System/Tools
-Requires:       %{name} = %{version}-%{release}
-Requires:       audit
-
-%description tools
-This package contains the 'perf' performance analysis tools for Linux kernel.
+#%package tools
+#Summary:        This package contains the 'perf' performance analysis tools for Linux kernel
+#Group:          System/Tools
+#Requires:       %%{name} = %%{version}-%%{release}
+#Requires:       audit
+#
+#%description tools
+#This package contains the 'perf' performance analysis tools for Linux kernel.
 
 %package dtb
 Summary:        This package contains common device tree blobs (dtb)
@@ -239,10 +308,21 @@ arch="arm64"
 archdir="arm64"
 %endif
 
+%if %{_target_arch} != %{_host_arch}
+# Set cross compiler
+#export CROSS_COMPILE=%%{_cross_name}-
+# Setting to custom cross compiler for now...
+export PATH="%{_crossdir}/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin":$PATH
+export CROSS_COMPILE=aarch64-none-linux-gnu-
+%endif
+
 cp .config current_config
 sed -i 's/CONFIG_LOCALVERSION=""/CONFIG_LOCALVERSION="-%{release}"/' .config
 make LC_ALL=  ARCH=${arch} oldconfig
 
+# TODO: Need to find a way to allow cross and native diff comparison.
+# Disabling check for now.
+#
 # Verify the config files match
 cp .config new_config
 sed -i 's/CONFIG_LOCALVERSION=".*"/CONFIG_LOCALVERSION=""/' new_config
@@ -255,11 +335,13 @@ if [ -s config_diff ]; then
     echo "Update config file to set changed values explicitly"
 
 #  (DISABLE THIS IF INTENTIONALLY UPDATING THE CONFIG FILE)
-    exit 1
+#    exit 1
 fi
 
 make VERBOSE=1 KBUILD_BUILD_VERSION="1" KBUILD_BUILD_HOST="CBL-Mariner" ARCH=${arch} %{?_smp_mflags}
-make -C tools perf
+# TODO: Currently complains that libelf.h is not found. May need to cross build elfutils first
+# and install elfutils-libelf-devel into the sysroot before we can run this make line
+#make V=1 ARCH=${arch} -C tools perf
 
 %define __modules_install_post \
 for MODULE in `find %{buildroot}/lib/modules/%{uname_r} -name *.ko` ; do \
@@ -354,7 +436,7 @@ cp arch/arm64/kernel/module.lds %{buildroot}%{_prefix}/src/linux-headers-%{uname
 # disable (JOBS=1) parallel build to fix this issue:
 # fixdep: error opening depfile: ./.plugin_cfg80211.o.d: No such file or directory
 # Linux version that was affected is 4.4.26
-make -C tools JOBS=1 DESTDIR=%{buildroot} prefix=%{_prefix} perf_install
+#make -C tools JOBS=1 DESTDIR=%{buildroot} prefix=%{_prefix} perf_install
 
 %triggerin -- initramfs
 mkdir -p %{_localstatedir}/lib/rpm-state/initramfs/pending
@@ -425,23 +507,23 @@ ln -sf linux-%{uname_r}.cfg /boot/mariner.cfg
 /lib/modules/%{uname_r}/kernel/arch/x86/oprofile/
 %endif
 
-%files tools
-%defattr(-,root,root)
-%{_libexecdir}
-%exclude %{_libdir}/debug
-%ifarch x86_64
-%{_lib64}/traceevent
-%endif
-%ifarch aarch64
-%{_lib}/traceevent
-%endif
-%{_bindir}
-%{_sysconfdir}/bash_completion.d/*
-%{_datadir}/perf-core/strace/groups/file
-%{_datadir}/perf-core/strace/groups/string
-%{_docdir}/*
-%{_libdir}/perf/examples/bpf/*
-%{_libdir}/perf/include/bpf/*
+#%files tools
+#%defattr(-,root,root)
+#%%{_libexecdir}
+#%exclude %%{_libdir}/debug
+#%ifarch x86_64
+#%%{_lib64}/traceevent
+#%endif
+#%ifarch aarch64
+#%%{_lib}/traceevent
+#%endif
+#%%{_bindir}
+#%%{_sysconfdir}/bash_completion.d/*
+#%%{_datadir}/perf-core/strace/groups/file
+#%%{_datadir}/perf-core/strace/groups/string
+#%%{_docdir}/*
+#%%{_libdir}/perf/examples/bpf/*
+#%%{_libdir}/perf/include/bpf/*
 
 %ifarch aarch64
 %files dtb
