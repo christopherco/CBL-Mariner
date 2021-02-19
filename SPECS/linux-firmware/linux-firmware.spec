@@ -6,7 +6,7 @@
 Summary:        Linux Firmware
 Name:           linux-firmware
 Version:        20200316
-Release:        2%{?dist}
+Release:        200%{?dist}
 License:        GPL+ and GPLv2+ and MIT and Redistributable, no modification permitted
 URL:            https://www.kernel.org/
 Group:          System Environment/Kernel
@@ -26,6 +26,7 @@ This package includes firmware files required for some devices to operate.
 
 %install
 mkdir -p %{buildroot}%{_firmwarepath}
+cp -r bnx2x %{buildroot}%{_firmwarepath}
 cp -r brcm %{buildroot}%{_firmwarepath}
 cp -r rsi %{buildroot}%{_firmwarepath}
 cp rsi_91x.fw %{buildroot}%{_firmwarepath}
