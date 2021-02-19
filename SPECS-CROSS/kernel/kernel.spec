@@ -189,15 +189,15 @@ BuildRequires:  bison
 BuildRequires:  openssl-devel
 BuildRequires:  bc
 # awk actually resolves to gawk package
-BuildRequires:  awk
+BuildRequires:  gawk
 BuildRequires:  diffutils
 BuildRequires:  perl
 BuildRequires:  elfutils-libelf-devel
-#%if %%{_target_arch} != %%{_host_arch}
-#BuildRequires: %%{_cross_name}-binutils
-#BuildRequires: %%{_cross_name}-gcc
-#%endif
-###
+%if %%{_target_arch} != %%{_host_arch}
+# TODO - eventually use real cross toolchain
+BuildRequires: aarch64-linux-gnu-toolchain
+%endif
+
 #BuildRequires:  audit-devel
 #BuildRequires:  bc
 #BuildRequires:  diffutils
@@ -312,8 +312,8 @@ archdir="arm64"
 # Set cross compiler
 #export CROSS_COMPILE=%%{_cross_name}-
 # Setting to custom cross compiler for now...
-export PATH="%{_crossdir}/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin":$PATH
-export CROSS_COMPILE=aarch64-none-linux-gnu-
+export PATH="%{_crossdir}/bin":$PATH
+export CROSS_COMPILE=aarch64-linux-gnu-
 %endif
 
 cp .config current_config
