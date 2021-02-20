@@ -1,5 +1,3 @@
-%define  debug_package %{nil}
-
 Summary:        aarch64-linux-gnu cross compiling toolchain
 Name:           aarch64-linux-gnu-toolchain
 Version:        0.1.0
@@ -8,6 +6,7 @@ License:        GPLv2+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Development/Tools
+AutoReqProv:    no
 Source0:        %{name}-%{version}.tar.gz
 
 %description
