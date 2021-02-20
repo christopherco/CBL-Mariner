@@ -994,7 +994,6 @@ func (g *PkgGraph) AddGoalNode(goalName string, packages []*pkgjson.PackageVer, 
 		nodeID:     g.NewNode().ID(),
 		GoalName:   goalName,
 	}
-	goalNode.Architecture = "aarch64"
 	goalNode.This = goalNode
 	g.AddNode(goalNode)
 

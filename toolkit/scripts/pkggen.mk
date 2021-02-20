@@ -182,6 +182,7 @@ $(STATUS_FLAGS_DIR)/build-rpms.flag: $(cached_file) $(chroot_worker) $(go-schedu
 		$(if $(CONFIG_FILE),--base-dir="$(CONFIG_BASE_DIR)") \
 		$(if $(filter y,$(RUN_CHECK)),--run-check) \
 		$(if $(filter y,$(STOP_ON_PKG_FAIL)),--stop-on-failure) \
+		$(if $(filter y,$(CROSS_COMPILE)),--cross-compile) \
 		$(logging_command) && \
 	touch $@
 
