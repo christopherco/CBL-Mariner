@@ -7,6 +7,7 @@ Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Development/Tools
 AutoReqProv:    no
+ExclusiveArch:  x86_64
 Source0:        %{name}-%{version}.tar.gz
 
 %description
