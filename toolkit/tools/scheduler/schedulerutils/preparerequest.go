@@ -26,6 +26,7 @@ func ConvertNodesToRequests(pkgGraph *pkggraph.PkgGraph, graphMutex *sync.RWMute
 
 	for _, node := range nodesToBuild {
 		if node.Type == pkggraph.TypeBuild {
+			node.Architecture = "aarch64"
 			buildNodes[node.SrpmPath] = append(buildNodes[node.SrpmPath], node)
 			continue
 		}
