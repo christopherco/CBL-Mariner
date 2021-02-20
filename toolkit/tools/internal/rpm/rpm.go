@@ -5,6 +5,7 @@ package rpm
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"microsoft.com/pkggen/internal/file"
@@ -49,6 +50,11 @@ const (
 	rpmSpecProgram  = "rpmspec"
 	rpmBuildProgram = "rpmbuild"
 )
+
+var goArchToRpmArch = map[string]string{
+	"amd64": "x86_64",
+	"arm64": "aarch64",
+}
 
 // SetMacroDir adds RPM_CONFIGDIR=$(newMacroDir) into the shell's environment for the duration of a program.
 // To restore the environment the caller can use shell.SetEnvironment() with the returned origenv.
@@ -178,14 +184,31 @@ func QueryPackage(packageFile, queryFormat string, defines map[string]string, ex
 }
 
 // BuildRPMFromSRPM builds an RPM from the given SRPM file
-func BuildRPMFromSRPM(srpmFile string, defines map[string]string, extraArgs ...string) (err error) {
+func BuildRPMFromSRPM(srpmFile, outArch string, defines map[string]string, extraArgs ...string) (err error) {
 	const (
 		queryFormat  = ""
 		squashErrors = true
+		vendor       = "mariner"
+		os           = "linux"
 	)
 
 	extraArgs = append(extraArgs, "--rebuild", "--nodeps")
 
+	// build arch is the arch of the build machine
+	// host arch is the arch of the machine that will run the resulting binary
+	// target arch is the arch of the machine that the resulting binary will emit (relevant for toolchains)
+	buildArch := goArchToRpmArch[runtime.GOARCH]
+
+	logger.Log.Debugf("Go Native Arch (%s)", runtime.GOARCH)
+	logger.Log.Debugf("Build Arch (%s)", buildArch)
+	logger.Log.Debugf("Host Arch (%s)", outArch)
+	logger.Log.Debugf("Target Arch (%s)", outArch)
+
+	if buildArch != outArch {
+		tuple := outArch + "-" + vendor + "-" + os
+		tupleArg := "--target=" + tuple
+		extraArgs = append(extraArgs, tupleArg)
+	}
 	args := formatCommandArgs(extraArgs, srpmFile, queryFormat, defines)
 	return shell.ExecuteLive(squashErrors, rpmBuildProgram, args...)
 }
