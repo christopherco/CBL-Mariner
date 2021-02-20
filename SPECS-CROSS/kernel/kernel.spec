@@ -38,6 +38,8 @@
 %global _cross_bindir       %{_tuple}/bin
 %global _cross_libdir       %{_tuple}/lib
 %global _tuple_name         %{_tuple}-
+%global __strip %{_cross_prefix}%{_bindir}/%{_tuple_name}strip
+%global __objdump %{_cross_prefix}%{_bindir}/%{_tuple_name}objdump
 %else
 %global _cross_prefix       %{nil}
 %global _cross_sysroot      %{nil}
@@ -193,9 +195,8 @@ BuildRequires:  gawk
 BuildRequires:  diffutils
 BuildRequires:  perl
 BuildRequires:  elfutils-libelf-devel
-%if %%{_target_arch} != %%{_host_arch}
-# TODO - eventually use real cross toolchain
-BuildRequires: aarch64-linux-gnu-toolchain
+%if %{_target_arch} != %{_host_arch}
+BuildRequires: aarch64-mariner-linux-gnu-toolchain
 %endif
 
 #BuildRequires:  audit-devel
@@ -287,9 +288,9 @@ This package contains common device tree blobs (dtb)
 %prep
 %setup -q -n WSL2-Linux-Kernel-linux-msft-%{version}
 
-%ifarch aarch64
+#%ifarch aarch64
 %patch0 -p1
-%endif
+#%endif
 
 %patch1 -p1
 
@@ -310,10 +311,8 @@ archdir="arm64"
 
 %if %{_target_arch} != %{_host_arch}
 # Set cross compiler
-#export CROSS_COMPILE=%%{_cross_name}-
-# Setting to custom cross compiler for now...
 export PATH="%{_crossdir}/bin":$PATH
-export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE=%{_cross_name}-
 %endif
 
 cp .config current_config
@@ -361,6 +360,12 @@ for MODULE in `find %{buildroot}/lib/modules/%{uname_r} -name *.ko` ; do \
 %{nil}
 
 %install
+%if %{_target_arch} != %{_host_arch}
+# Set cross compiler
+export PATH="%{_crossdir}/bin":$PATH
+export CROSS_COMPILE=%{_cross_name}-
+%endif
+
 install -vdm 755 %{buildroot}%{_sysconfdir}
 install -vdm 700 %{buildroot}/boot
 install -vdm 755 %{buildroot}%{_defaultdocdir}/linux-%{uname_r}

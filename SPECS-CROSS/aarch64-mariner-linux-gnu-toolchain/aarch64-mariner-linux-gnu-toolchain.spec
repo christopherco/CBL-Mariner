@@ -1,5 +1,5 @@
-Summary:        aarch64-linux-gnu cross compiling toolchain
-Name:           aarch64-linux-gnu-toolchain
+Summary:        aarch64-mariner-linux-gnu cross compiling toolchain
+Name:           aarch64-mariner-linux-gnu-toolchain
 Version:        0.1.0
 Release:        1%{?dist}
 License:        GPLv2+
@@ -11,7 +11,7 @@ ExclusiveArch:  x86_64
 Source0:        %{name}-%{version}.tar.gz
 
 %description
-aarch64-linux-gnu cross compiling toolchain binaries
+Prebuilt aarch64-mariner-linux-gnu cross compiling toolchain
 
 %prep
 %autosetup -c
