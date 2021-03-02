@@ -5,6 +5,7 @@ package rpm
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"microsoft.com/pkggen/internal/file"
@@ -21,6 +22,9 @@ const (
 
 	// QueryBuiltRPMHeadersArgument specifies that only rpm packages that would be built from a given spec should be queried.
 	QueryBuiltRPMHeadersArgument = "--builtrpms"
+
+	// TargetArgument specifies to build for a target platform (i.e., aarch64-mariner-linux)
+	TargetArgument = "--target"
 
 	// DistTagDefine specifies the dist tag option for rpm tool commands
 	DistTagDefine = "dist"
@@ -49,6 +53,20 @@ const (
 	rpmSpecProgram  = "rpmspec"
 	rpmBuildProgram = "rpmbuild"
 )
+
+var goArchToRpmArch = map[string]string{
+	"amd64": "x86_64",
+	"arm64": "aarch64",
+}
+
+// GetRpmArch converts the GOARCH arch into RPM arch
+func GetRpmArch(goArch string) (rpmArch string, err error) {
+	rpmArch, ok := goArchToRpmArch[goArch]
+	if !ok {
+		err = fmt.Errorf("Unrecognized GOARCH detected (%s)", goArch)
+	}
+	return
+}
 
 // SetMacroDir adds RPM_CONFIGDIR=$(newMacroDir) into the shell's environment for the duration of a program.
 // To restore the environment the caller can use shell.SetEnvironment() with the returned origenv.
@@ -136,12 +154,15 @@ func DefaultDefines() map[string]string {
 }
 
 // QuerySPEC queries a SPEC file with queryFormat. Returns the output split by line and trimmed.
-func QuerySPEC(specFile, sourceDir, queryFormat string, defines map[string]string, extraArgs ...string) (result []string, err error) {
+func QuerySPEC(specFile, sourceDir, queryFormat, arch string, defines map[string]string, extraArgs ...string) (result []string, err error) {
 	const queryArg = "-q"
 
 	var allDefines map[string]string
 
 	extraArgs = append(extraArgs, queryArg)
+
+	// Apply --target arch argument
+	extraArgs = append(extraArgs, TargetArgument, arch)
 
 	// To query some SPECs the source directory must be set
 	// since the SPEC file may use `%include` on a source file
@@ -161,10 +182,10 @@ func QuerySPEC(specFile, sourceDir, queryFormat string, defines map[string]strin
 }
 
 // QuerySPECForBuiltRPMs queries a SPEC file with queryFormat. Returns only the subpackages, which generate a .rpm file.
-func QuerySPECForBuiltRPMs(specFile, sourceDir, queryFormat string, defines map[string]string) (result []string, err error) {
+func QuerySPECForBuiltRPMs(specFile, sourceDir, queryFormat, arch string, defines map[string]string) (result []string, err error) {
 	const builtRPMsSwitch = "--builtrpms"
 
-	return QuerySPEC(specFile, sourceDir, queryFormat, defines, builtRPMsSwitch)
+	return QuerySPEC(specFile, sourceDir, queryFormat, arch, defines, builtRPMsSwitch)
 }
 
 // QueryPackage queries an RPM or SRPM file with queryFormat. Returns the output split by line and trimmed.
@@ -178,14 +199,34 @@ func QueryPackage(packageFile, queryFormat string, defines map[string]string, ex
 }
 
 // BuildRPMFromSRPM builds an RPM from the given SRPM file
-func BuildRPMFromSRPM(srpmFile string, defines map[string]string, extraArgs ...string) (err error) {
+func BuildRPMFromSRPM(srpmFile, outArch string, defines map[string]string, extraArgs ...string) (err error) {
 	const (
 		queryFormat  = ""
 		squashErrors = true
+		vendor       = "mariner"
+		os           = "linux"
 	)
 
 	extraArgs = append(extraArgs, "--rebuild", "--nodeps")
 
+	// build arch is the arch of the build machine
+	// host arch is the arch of the machine that will run the resulting binary
+	// target arch is the arch of the machine that the resulting binary will emit (relevant for toolchains)
+	buildArch, err := GetRpmArch(runtime.GOARCH)
+	if err != nil {
+		return
+	}
+
+	logger.Log.Debugf("Go Native Arch (%s)", runtime.GOARCH)
+	logger.Log.Debugf("Build Arch (%s)", buildArch)
+	logger.Log.Debugf("Host Arch (%s)", outArch)
+	logger.Log.Debugf("Target Arch (%s)", outArch)
+
+	if buildArch != outArch {
+		tuple := outArch + "-" + vendor + "-" + os
+		logger.Log.Debugf("Applying Target Tuple (%s)", tuple)
+		extraArgs = append(extraArgs, TargetArgument, tuple)
+	}
 	args := formatCommandArgs(extraArgs, srpmFile, queryFormat, defines)
 	return shell.ExecuteLive(squashErrors, rpmBuildProgram, args...)
 }
@@ -251,7 +292,7 @@ func QueryRPMProvides(rpmFile string) (provides []string, err error) {
 }
 
 // SpecExclusiveArchIsCompatible verifies ExclusiveArch tag is compatible with the current machine's architecture.
-func SpecExclusiveArchIsCompatible(specfile, sourcedir string, defines map[string]string) (isCompatible bool, err error) {
+func SpecExclusiveArchIsCompatible(specfile, sourcedir, arch string, defines map[string]string) (isCompatible bool, err error) {
 	const (
 		queryExclusiveArch = "%{ARCH}\n[%{EXCLUSIVEARCH}]\n"
 		// "(none)" means no ExclusiveArch tag has been set.
@@ -265,7 +306,7 @@ func SpecExclusiveArchIsCompatible(specfile, sourcedir string, defines map[strin
 	)
 
 	// Sanity check that this SPEC is meant to be built for the current machine architecture
-	exclusiveArchList, err := QuerySPEC(specfile, sourcedir, queryExclusiveArch, defines, QueryHeaderArgument)
+	exclusiveArchList, err := QuerySPEC(specfile, sourcedir, queryExclusiveArch, arch, defines, QueryHeaderArgument)
 	if err != nil {
 		logger.Log.Warnf("Failed to query SPEC (%s), error: %s", specfile, err)
 		return

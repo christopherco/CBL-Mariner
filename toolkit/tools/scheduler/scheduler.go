@@ -16,6 +16,7 @@ import (
 	"microsoft.com/pkggen/internal/logger"
 	"microsoft.com/pkggen/internal/pkggraph"
 	"microsoft.com/pkggen/internal/pkgjson"
+	"microsoft.com/pkggen/internal/rpm"
 	"microsoft.com/pkggen/internal/shell"
 	"microsoft.com/pkggen/scheduler/buildagents"
 	"microsoft.com/pkggen/scheduler/schedulerutils"
@@ -71,6 +72,8 @@ var (
 	pkgsToBuild   = app.Flag("packages", "Space separated list of top-level packages that should be built. Omit this argument to build all packages.").String()
 	pkgsToRebuild = app.Flag("rebuild-packages", "Space separated list of base package names packages that should be rebuilt.").String()
 
+	targetArch = app.Flag("target-arch", "Target arch to build for").String()
+
 	logFile  = exe.LogFileFlag(app)
 	logLevel = exe.LogLevelFlag(app)
 )
@@ -80,6 +83,15 @@ func main() {
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 	logger.InitBestEffort(*logFile, *logLevel)
+
+	buildArch, err := rpm.GetRpmArch(runtime.GOARCH)
+	if err != nil {
+		return
+	}
+
+	if *targetArch == "" {
+		targetArch = &buildArch
+	}
 
 	if *workers <= 0 {
 		*workers = runtime.NumCPU()
@@ -140,7 +152,7 @@ func main() {
 	signal.Notify(signals, unix.SIGINT, unix.SIGTERM)
 	go cancelBuildsOnSignal(signals, agent)
 
-	err = buildGraph(*inputGraphFile, *outputGraphFile, agent, *workers, *buildAttempts, *stopOnFailure, !*noCache, packageVersToBuild, packagesNamesToRebuild)
+	err = buildGraph(*inputGraphFile, *outputGraphFile, *targetArch, agent, *workers, *buildAttempts, *stopOnFailure, !*noCache, packageVersToBuild, packagesNamesToRebuild)
 	if err != nil {
 		logger.Log.Fatalf("Unable to build package graph.\nFor details see the build summary section above.\nError: %s", err)
 	}
@@ -168,11 +180,11 @@ func cancelBuildsOnSignal(signals chan os.Signal, agent buildagents.BuildAgent) 
 
 // buildGraph builds all packages in the dependency graph requested.
 // It will save the resulting graph to outputFile.
-func buildGraph(inputFile, outputFile string, agent buildagents.BuildAgent, workers, buildAttempts int, stopOnFailure, canUseCache bool, packagesToBuild []*pkgjson.PackageVer, packagesNamesToRebuild []string) (err error) {
+func buildGraph(inputFile, outputFile, targetArch string, agent buildagents.BuildAgent, workers, buildAttempts int, stopOnFailure, canUseCache bool, packagesToBuild []*pkgjson.PackageVer, packagesNamesToRebuild []string) (err error) {
 	// graphMutex guards pkgGraph from concurrent reads and writes during build.
 	var graphMutex sync.RWMutex
 
-	isGraphOptimized, pkgGraph, goalNode, err := schedulerutils.InitializeGraph(inputFile, packagesToBuild)
+	isGraphOptimized, pkgGraph, goalNode, err := schedulerutils.InitializeGraph(inputFile, targetArch, packagesToBuild)
 	if err != nil {
 		return
 	}
@@ -350,7 +362,7 @@ func updateGraphWithImplicitProvides(res *schedulerutils.BuildResult, pkgGraph *
 	} else if didInjectAny {
 		// Failure to optimize the graph is non fatal as there may simply be unresolved dynamic dependencies
 		var subgraphErr error
-		newGraph, newGoalNode, subgraphErr = schedulerutils.OptimizeGraph(pkgGraph, useCachedImplicit)
+		newGraph, newGoalNode, subgraphErr = schedulerutils.OptimizeGraph(pkgGraph, *targetArch, useCachedImplicit)
 		if subgraphErr == nil {
 			logger.Log.Infof("Created solvable subgraph with new implicit provide information")
 			didOptimize = true
