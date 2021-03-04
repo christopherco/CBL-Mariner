@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 	"microsoft.com/pkggen/internal/exe"
@@ -258,33 +259,65 @@ func addPkgDependencies(g *pkggraph.PkgGraph, pkg *pkgjson.Package, buildArch, t
 				dependenciesAdded++
 			}
 		} else {
-			err = addSingleDependency(g, runNode, dependency, pkg.Architecture)
+			// We need to handle when %{_isa} is used in BuildRequires/Requires.
+			// If present, only add a isa-specific dependency. Otherwise always add the dependency
+			var targetIsaArch []string
+			targetIsaArch, err = rpm.GetRpmEvalIsa(targetArch)
 			if err != nil {
-				logger.Log.Errorf("Unable to add run-time dependencies for %+v", pkg)
 				return
 			}
-			dependenciesAdded++
+			if strings.Contains(dependency.Name, targetIsaArch[0]) {
+				err = addSingleDependency(g, runNode, dependency, targetArch)
+				if err != nil {
+					logger.Log.Errorf("Unable to add explicit isa run-time dependencies for %+v (%s)", pkg, targetArch)
+					return
+				}
+				dependenciesAdded++
+			} else {
+				err = addSingleDependency(g, runNode, dependency, pkg.Architecture)
+				if err != nil {
+					logger.Log.Errorf("Unable to add run-time dependencies for %+v", pkg)
+					return
+				}
+				dependenciesAdded++
+			}
 		}
 	}
 
 	logger.Log.Tracef("Adding build dependencies")
 	for _, dependency := range buildDependencies {
-		// Most packages will both build and run on the buildArch architecture
-		err = addSingleDependency(g, buildNode, dependency, buildArch)
+		// We need to handle when %{_isa} is used in BuildRequires/Requires.
+		// If present, only add a isa-specific dependency. Otherwise always add the dependency
+		var targetIsaArch []string
+		targetIsaArch, err = rpm.GetRpmEvalIsa(targetArch)
 		if err != nil {
-			logger.Log.Errorf("Unable to add build-time dependencies for %+v", pkg)
 			return
 		}
-		dependenciesAdded++
-		// For either cross arch, or noarch packages we may also need the target arch packages to build
-		// if we are cross compiling.
-		if buildArch != targetArch && pkg.Architecture != buildArch {
+		if strings.Contains(dependency.Name, targetIsaArch[0]) {
 			err = addSingleDependency(g, buildNode, dependency, targetArch)
 			if err != nil {
-				logger.Log.Errorf("Unable to add cross-arch build-time dependencies for %+v", pkg)
+				logger.Log.Errorf("Unable to add explicit isa build-time dependencies for %+v (%s)", pkg, targetArch)
 				return
 			}
 			dependenciesAdded++
+		} else {
+			// Most packages will both build and run on the buildArch architecture
+			err = addSingleDependency(g, buildNode, dependency, buildArch)
+			if err != nil {
+				logger.Log.Errorf("Unable to add build-time dependencies for %+v", pkg)
+				return
+			}
+			dependenciesAdded++
+			// For either cross arch, or noarch packages we may also need the target arch packages to build
+			// if we are cross compiling.
+			if buildArch != targetArch && pkg.Architecture != buildArch {
+				err = addSingleDependency(g, buildNode, dependency, targetArch)
+				if err != nil {
+					logger.Log.Errorf("Unable to add cross-arch build-time dependencies for %+v", pkg)
+					return
+				}
+				dependenciesAdded++
+			}
 		}
 	}
 

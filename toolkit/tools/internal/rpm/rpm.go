@@ -68,6 +68,21 @@ func GetRpmArch(goArch string) (rpmArch string, err error) {
 	return
 }
 
+// GetRpmEvalIsa returns the value of the given RPM target architecture (i.e., aarch64)
+// to the %{_isa} macro equivalent (i.e., (aarch-64))
+func GetRpmEvalIsa(targetArch string) (isaArch []string, err error) {
+	const (
+		targetArg  = "--target"
+		evalArg    = "--eval"
+		isaPattern = "%{_isa}"
+	)
+	args := []string{targetArg}
+	args = append(args, targetArch)
+	args = append(args, evalArg, isaPattern)
+
+	return executeRpmCommand(rpmProgram, args...)
+}
+
 // SetMacroDir adds RPM_CONFIGDIR=$(newMacroDir) into the shell's environment for the duration of a program.
 // To restore the environment the caller can use shell.SetEnvironment() with the returned origenv.
 // On an empty string argument return success immediately and do not modify the environment.
