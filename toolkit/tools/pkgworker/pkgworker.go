@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -30,21 +31,23 @@ const (
 )
 
 var (
-	app                  = kingpin.New("pkgworker", "A worker for building packages locally")
-	srpmFile             = exe.InputFlag(app, "Full path to the SRPM to build")
-	workDir              = app.Flag("work-dir", "The directory to create the build folder").Required().String()
-	workerTar            = app.Flag("worker-tar", "Full path to worker_chroot.tar.gz").Required().ExistingFile()
-	repoFile             = app.Flag("repo-file", "Full path to local.repo").Required().ExistingFile()
-	rpmsDirPath          = app.Flag("rpm-dir", "The directory to use as the local repo and to submit RPM packages to").Required().ExistingDir()
-	srpmsDirPath         = app.Flag("srpm-dir", "The output directory for source RPM packages").Required().String()
-	cacheDir             = app.Flag("cache-dir", "The cache directory containing downloaded dependency RPMS from CBL-Mariner Base").Required().ExistingDir()
-	noCleanup            = app.Flag("no-cleanup", "Whether or not to delete the chroot folder after the build is done").Bool()
-	distTag              = app.Flag("dist-tag", "The distribution tag the SPEC will be built with.").Required().String()
-	distroReleaseVersion = app.Flag("distro-release-version", "The distro release version that the SRPM will be built with").Required().String()
-	distroBuildNumber    = app.Flag("distro-build-number", "The distro build number that the SRPM will be built with").Required().String()
-	rpmmacrosFile        = app.Flag("rpmmacros-file", "Optional file path to an rpmmacros file for rpmbuild to use").ExistingFile()
-	runCheck             = app.Flag("run-check", "Run the check during package build").Bool()
-	packagesToInstall    = app.Flag("install-package", "Filepaths to RPM packages that should be installed before building.").Strings()
+	app                     = kingpin.New("pkgworker", "A worker for building packages locally")
+	srpmFile                = exe.InputFlag(app, "Full path to the SRPM to build")
+	workDir                 = app.Flag("work-dir", "The directory to create the build folder").Required().String()
+	workerTar               = app.Flag("worker-tar", "Full path to worker_chroot.tar.gz").Required().ExistingFile()
+	repoFile                = app.Flag("repo-file", "Full path to local.repo").Required().ExistingFile()
+	rpmsDirPath             = app.Flag("rpm-dir", "The directory to use as the local repo and to submit RPM packages to").Required().ExistingDir()
+	srpmsDirPath            = app.Flag("srpm-dir", "The output directory for source RPM packages").Required().String()
+	cacheDir                = app.Flag("cache-dir", "The cache directory containing downloaded dependency RPMS from CBL-Mariner Base").Required().ExistingDir()
+	noCleanup               = app.Flag("no-cleanup", "Whether or not to delete the chroot folder after the build is done").Bool()
+	distTag                 = app.Flag("dist-tag", "The distribution tag the SPEC will be built with.").Required().String()
+	distroReleaseVersion    = app.Flag("distro-release-version", "The distro release version that the SRPM will be built with").Required().String()
+	distroBuildNumber       = app.Flag("distro-build-number", "The distro build number that the SRPM will be built with").Required().String()
+	rpmmacrosFile           = app.Flag("rpmmacros-file", "Optional file path to an rpmmacros file for rpmbuild to use").ExistingFile()
+	runCheck                = app.Flag("run-check", "Run the check during package build").Bool()
+	packagesToInstall       = app.Flag("install-package", "Filepaths to RPM packages that should be installed before building.").Strings()
+	targetPackagesToInstall = app.Flag("target-install-package", "Filepaths to RPM packages that should be installed into target sysroot before building.").Strings()
+	outArch                 = app.Flag("out-arch", "Architecture of resulting package").String()
 
 	logFile  = exe.LogFileFlag(app)
 	logLevel = exe.LogLevelFlag(app)
@@ -73,7 +76,7 @@ func main() {
 	defines[rpm.DistroReleaseVersionDefine] = *distroReleaseVersion
 	defines[rpm.DistroBuildNumberDefine] = *distroBuildNumber
 
-	builtRPMs, err := buildSRPMInChroot(chrootDir, rpmsDirAbsPath, *workerTar, *srpmFile, *repoFile, *rpmmacrosFile, defines, *noCleanup, *runCheck, *packagesToInstall)
+	builtRPMs, err := buildSRPMInChroot(chrootDir, rpmsDirAbsPath, *workerTar, *srpmFile, *repoFile, *rpmmacrosFile, *outArch, defines, *noCleanup, *runCheck, *packagesToInstall, *targetPackagesToInstall)
 	logger.PanicOnError(err, "Failed to build SRPM '%s'. For details see log file: %s .", *srpmFile, *logFile)
 
 	err = copySRPMToOutput(*srpmFile, srpmsDirAbsPath)
@@ -95,7 +98,7 @@ func copySRPMToOutput(srpmFilePath, srpmOutputDirPath string) (err error) {
 	return
 }
 
-func buildSRPMInChroot(chrootDir, rpmDirPath, workerTar, srpmFile, repoFile, rpmmacrosFile string, defines map[string]string, noCleanup, runCheck bool, packagesToInstall []string) (builtRPMs []string, err error) {
+func buildSRPMInChroot(chrootDir, rpmDirPath, workerTar, srpmFile, repoFile, rpmmacrosFile, outArch string, defines map[string]string, noCleanup, runCheck bool, packagesToInstall, targetPackagesToInstall []string) (builtRPMs []string, err error) {
 	const (
 		existingChrootDir = false
 		squashErrors      = false
@@ -129,7 +132,7 @@ func buildSRPMInChroot(chrootDir, rpmDirPath, workerTar, srpmFile, repoFile, rpm
 	}
 
 	err = chroot.Run(func() (err error) {
-		return buildRPMFromSRPMInChroot(srpmFileInChroot, runCheck, defines, packagesToInstall)
+		return buildRPMFromSRPMInChroot(srpmFileInChroot, outArch, runCheck, defines, packagesToInstall, targetPackagesToInstall)
 	})
 
 	if err != nil {
@@ -147,17 +150,64 @@ func buildSRPMInChroot(chrootDir, rpmDirPath, workerTar, srpmFile, repoFile, rpm
 	return
 }
 
-func buildRPMFromSRPMInChroot(srpmFile string, runCheck bool, defines map[string]string, packagesToInstall []string) (err error) {
+func buildRPMFromSRPMInChroot(srpmFile, outArch string, runCheck bool, defines map[string]string, packagesToInstall, targetPackagesToInstall []string) (err error) {
+	const (
+		sysrootDir = "/opt/cross/aarch64-mariner-linux-gnu/sysroot"
+	)
+
+	logger.Log.Debugf("packagesToInstall (%s)", packagesToInstall)
+	logger.Log.Debugf("targetPackagesToInstall (%s)", targetPackagesToInstall)
+
 	// Convert /localrpms into a repository that a package manager can use
 	err = rpmrepomanager.CreateRepo(chrootLocalRpmsDir)
 	if err != nil {
 		return
 	}
 
-	// install any additional packages, such as build dependencies.
-	err = tdnfInstall(packagesToInstall)
+	buildArch, err := rpm.GetRpmArch(runtime.GOARCH)
 	if err != nil {
 		return
+	}
+
+	// install any additional packages, such as build dependencies.
+	err = tdnfInstall(packagesToInstall, buildArch, "/")
+	if err != nil {
+		return
+	}
+
+	// Check if we are cross compiling. If so, populate the sysroot
+	if (buildArch != outArch) && (outArch != "noarch") {
+		// Another hack. Adding a spot for initial sysroot packages. Should try
+		// to remove this for the final design.
+		initialSysroot := make([]string, 0)
+		initialSysroot = append(initialSysroot, "mariner-release")
+		initialSysroot = append(initialSysroot, "filesystem")
+		err = tdnfInstall(initialSysroot, outArch, sysrootDir)
+		if err != nil {
+			return
+		}
+		// This is a bit of a hack. We need a way for the spec file to tell us that
+		// it doesn't need certain BuildRequires to be installed into the sysroot.
+		// For example, the cross-toolchain really should only be installed into
+		// the chroot but not installed into the sysroot
+		crossToolchain := make([]string, 0)
+		crossToolchain = append(crossToolchain, "aarch64-mariner-linux-gnu-cross-gcc")
+		// Hack to make glibc build. Apparently it needs perl(File::Find)
+		crossToolchain = append(crossToolchain, "perl(File::Find)")
+		err = tdnfInstall(crossToolchain, buildArch, "/")
+		if err != nil {
+			return
+		}
+		err = tdnfInstall(targetPackagesToInstall, outArch, sysrootDir)
+		if err != nil {
+			return
+		}
+	} else {
+		// If we are doing a native build but targetPackagesToInstall is not nil here, we goofed
+		if len(targetPackagesToInstall) != 0 {
+			err = fmt.Errorf("native build scenario detected but target packages to install is non-zero (%v)", targetPackagesToInstall)
+			return
+		}
 	}
 
 	// Remove all libarchive files on the system before issuing a build.
@@ -171,9 +221,9 @@ func buildRPMFromSRPMInChroot(srpmFile string, runCheck bool, defines map[string
 
 	// Build the SRPM
 	if runCheck {
-		err = rpm.BuildRPMFromSRPM(srpmFile, defines)
+		err = rpm.BuildRPMFromSRPM(srpmFile, outArch, defines)
 	} else {
-		err = rpm.BuildRPMFromSRPM(srpmFile, defines, "--nocheck")
+		err = rpm.BuildRPMFromSRPM(srpmFile, outArch, defines, "--nocheck")
 	}
 
 	return
@@ -216,7 +266,7 @@ func moveBuiltRPMs(rpmOutDir, dstDir string) (builtRPMs []string, err error) {
 	return
 }
 
-func tdnfInstall(packages []string) (err error) {
+func tdnfInstall(packages []string, outArch, installRoot string) (err error) {
 	const (
 		alreadyInstalledPostfix = "is already installed."
 		noMatchingPackagesErr   = "Error(1011) : No matching packages"
@@ -236,6 +286,17 @@ func tdnfInstall(packages []string) (err error) {
 	}
 
 	installArgs := []string{"install", "-y"}
+	installArgs = append(installArgs, "--targetarch", outArch)
+	// This --refresh can be needed to workaround some oddities with --targetarch.
+	installArgs = append(installArgs, "--refresh")
+	// Another hack. To install to the sysroot, tdnf requires that releasever be set. Otherwise you get
+	// this fun tdnf error:
+	// Error(1022) : distroverpkg config entry is set to a package that is not installed. Check /etc/tdnf/tdnf.conf
+	// For some reason, tdnf cannot find our standard releasever which is supplied by mariner-release.
+	// We might need to out-of-band install mariner-release into the sysroot. Until then, overload
+	// the releasever inline in the tdnf command.
+	installArgs = append(installArgs, "--releasever", "1.0")
+	installArgs = append(installArgs, "--installroot", installRoot)
 	installArgs = append(installArgs, packages...)
 	stdout, stderr, err := shell.Execute("tdnf", installArgs...)
 	foundNoMatchingPackages := false

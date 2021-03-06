@@ -5,6 +5,7 @@ package main
 
 import (
 	"os"
+	"runtime"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -17,6 +18,7 @@ import (
 	"microsoft.com/pkggen/internal/packagerepo/repoutils"
 	"microsoft.com/pkggen/internal/pkggraph"
 	"microsoft.com/pkggen/internal/pkgjson"
+	"microsoft.com/pkggen/internal/rpm"
 )
 
 var (
@@ -44,6 +46,8 @@ var (
 	inputSummaryFile  = app.Flag("input-summary-file", "Path to a file with the summary of packages cloned to be restored").String()
 	outputSummaryFile = app.Flag("output-summary-file", "Path to save the summary of packages cloned").String()
 
+	targetArch = app.Flag("target-arch", "Target arch to build for").String()
+
 	logFile  = exe.LogFileFlag(app)
 	logLevel = exe.LogLevelFlag(app)
 )
@@ -53,12 +57,21 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 	logger.InitBestEffort(*logFile, *logLevel)
 
+	buildArch, err := rpm.GetRpmArch(runtime.GOARCH)
+	if err != nil {
+		return
+	}
+
+	if *targetArch == "" {
+		targetArch = &buildArch
+	}
+
 	if *externalOnly && strings.TrimSpace(*inputGraph) == "" {
 		logger.Log.Fatal("input-graph must be provided if external-only is set.")
 	}
 
 	cloner := rpmrepocloner.New()
-	err := cloner.Initialize(*outDir, *tmpDir, *workertar, *existingRpmDir, *useUpdateRepo, *usePreviewRepo, *repoFiles)
+	err = cloner.Initialize(*outDir, *tmpDir, *workertar, *existingRpmDir, *useUpdateRepo, *usePreviewRepo, *repoFiles)
 	if err != nil {
 		logger.Log.Panicf("Failed to initialize RPM repo cloner. Error: %s", err)
 	}
@@ -119,7 +132,7 @@ func cloneSystemConfigs(cloner repocloner.RepoCloner, configFile, baseDirPath st
 	}
 
 	logger.Log.Infof("Cloning: %v", packageVersionsInConfig)
-	err = cloner.Clone(cloneDeps, packageVersionsInConfig...)
+	err = cloner.Clone(cloneDeps, *targetArch, packageVersionsInConfig...)
 	return
 }
 
@@ -132,7 +145,7 @@ func filterExternalPackagesOnly(packageVersionsInConfig []*pkgjson.PackageVer, i
 	}
 
 	for _, pkgVer := range packageVersionsInConfig {
-		pkgNode, _ := dependencyGraph.FindBestPkgNode(pkgVer)
+		pkgNode, _ := dependencyGraph.FindBestPkgNode(pkgVer, *targetArch)
 
 		// There are two ways an external package will be represented by pkgNode.
 		// 1) pkgNode may be nil. This is possible if the package is never consumed during the build phase,

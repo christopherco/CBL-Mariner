@@ -62,7 +62,7 @@ analyze-built-graph: $(go-graphanalytics)
 	fi
 
 # Parse all specs in $(BUILD_SPECS_DIR) and generate a specs.json file encoding all dependency information
-$(specs_file): $(chroot_worker) $(BUILD_SPECS_DIR) $(build_specs) $(build_spec_dirs) $(go-specreader)
+$(specs_file): $(chroot_worker) $(BUILD_SPECS_DIR) $(build_specs) $(build_spec_dirs) $(go-specreader) $(depend_TARGET_ARCH)
 	$(go-specreader) \
 		--dir $(BUILD_SPECS_DIR) \
 		--build-dir $(BUILD_DIR)/spec_parsing \
@@ -71,12 +71,14 @@ $(specs_file): $(chroot_worker) $(BUILD_SPECS_DIR) $(build_specs) $(build_spec_d
 		--dist-tag $(DIST_TAG) \
 		--worker-tar $(chroot_worker) \
 		$(logging_command) \
+		$(if $(TARGET_ARCH),--target-arch=$(TARGET_ARCH)) \
 		--output $@
 
 # Convert the dependency information in the json file into a graph structure
-$(graph_file): $(specs_file) $(go-grapher)
+$(graph_file): $(specs_file) $(go-grapher) $(depend_TARGET_ARCH)
 	$(go-grapher) \
 		--input $(specs_file) \
+		$(if $(TARGET_ARCH),--target-arch=$(TARGET_ARCH)) \
 		$(logging_command) \
 		--output $@
 
@@ -179,6 +181,7 @@ $(STATUS_FLAGS_DIR)/build-rpms.flag: $(cached_file) $(chroot_worker) $(go-schedu
 		--packages="$(PACKAGE_BUILD_LIST)" \
 		--rebuild-packages="$(PACKAGE_REBUILD_LIST)" \
 		--image-config-file="$(CONFIG_FILE)" \
+		$(if $(TARGET_ARCH),--target-arch=$(TARGET_ARCH)) \
 		$(if $(CONFIG_FILE),--base-dir="$(CONFIG_BASE_DIR)") \
 		$(if $(filter y,$(RUN_CHECK)),--run-check) \
 		$(if $(filter y,$(STOP_ON_PKG_FAIL)),--stop-on-failure) \

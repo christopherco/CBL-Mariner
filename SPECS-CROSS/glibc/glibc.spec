@@ -1,12 +1,11 @@
 %global security_hardening nonow
-%define glibc_target_cpu %{_target_arch}
+%define glibc_target_cpu %{_build}
 %define debug_package %{nil}
 
 # Globals which should be in a macro file.
 # These should be set programatically in the future.
 %global _host_arch      x86_64
 %global _target_arch    aarch64
-
 %global _tuple          %{_target_arch}-%{_vendor}-linux-gnu
 %global _cross_name     %{_target_arch}-%{_vendor}-linux-gnu
 
@@ -17,32 +16,38 @@
 # Generally we include '/usr' in most paths.
 # Can we also use '/usr' for our paths? This will bring us in line with the
 # %%configure macro which sets these.
-%global _bindir            /bin
-%global _sbindir           /sbin
-%global _libdir            /lib
-%global _lib64dir          /lib64
-%global _libexecdir        /libexec
-%global _datadir           /share
-%global _docdir            /share/doc
-%global _includedir        /include
-%global _infodir           /share/info
-%global _mandir            /share/man
-%global _oldincludedir     /include
+#%%global _bindir            /bin
+#%%global _sbindir           /sbin
+#%%global _libdir            /lib
+#%%global _lib64dir          /lib64
+#%%global _libexecdir        /libexec
+#%%global _datadir           /share
+#%%global _docdir            /share/doc
+#%%global _includedir        /include
+#%%global _infodir           /share/info
+#%%global _mandir            /share/man
+#%%global _oldincludedir     /include
+
+
+# Why is this wrong? We get "x86_64-pc-linux-gnu" when eval'd, but our 
+# tools select "aarch64-linux-gnu"
+%global _host_vendor        %{nil}
 
 # If we want our cross compile aware packges to also support native, we
 # need logic to switch modes something like this:
 %if %{_target_arch} != %{_host_arch}
 %global _cross_prefix       %{_crossdir}%{_tuple}/
 %global _cross_sysroot      %{_crossdir}%{_tuple}/sysroot/
-%global _cross_includedir   /usr/%{_host}/%{_tuple}/include/
+%global _cross_includedir   %{_cross_sysroot}/include/
 %global _cross_infodir      %{_crossdir}%{_tuple}/share/info
-%global _cross_bindir       %{_tuple}/bin
+%global _cross_bindir       %{_crossdir}%{_tuple}/bin
 %global _cross_libdir       %{_tuple}/lib
 %global _tuple_name         %{_tuple}-
-
-%global __strip %{_cross_prefix}%{_bindir}/%{_tuple_name}strip
+%global __strip %{_cross_prefix}/bin/%{_tuple_name}strip
+%global __objdump %{_cross_prefix}/bin/%{_tuple_name}objdump
 %else
 %global _cross_prefix       %{nil}
+%global _cross_exec_prefix  %{nil}
 %global _cross_sysroot      %{nil}
 %global _cross_includedir   %{_includedir}
 %global _cross_infodir      %{_infodir}
@@ -52,15 +57,17 @@
 %endif
 
 Summary:        Main C library
-Name:           %{_cross_name}-glibc-bootstrap
+Name:           glibc
 Version:        2.28
-Release:        14%{?dist}
+Release:        15%{?dist}
 License:        LGPLv2+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Applications/System
 URL:            https://www.gnu.org/software/libc
-Source0:        https://ftp.gnu.org/gnu/glibc/glibc-%{version}.tar.xz
+Source0:        https://ftp.gnu.org/gnu/glibc/%{name}-%{version}.tar.xz
+Source1:        locale-gen.sh
+Source2:        locale-gen.conf
 Patch0:         http://www.linuxfromscratch.org/patches/downloads/glibc/glibc-2.25-fhs-1.patch
 Patch1:         glibc-2.24-bindrsvport-blacklist.patch
 Patch2:         0002-malloc-arena-fix.patch
@@ -78,18 +85,13 @@ Patch10:        CVE-2020-1751.nopatch
 # Marked by upstream/Ubuntu/Red Hat as not a security bug, no fix available
 # Rationale: Exploit requires crafted pattern in regex compiler meant only for trusted content
 Patch11:        CVE-2018-20796.nopatch
-#Requires:       filesystem
+Requires:       filesystem
 Provides:       %{name}-common = %{version}-%{release}
-Provides:       %{_cross_name}-rtld(GNU_HASH)
-Provides:       %{_crossdir}%{_tuple}/sbin/ldconfig
-BuildRequires:  %{_cross_name}-binutils
-BuildRequires:  %{_cross_name}-kernel-headers
-BuildRequires:  %{_cross_name}-gcc-bootstrap
-AutoReqProv:    no
-ExclusiveArch:  x86_64
-Conflicts:      %{_cross_name}-glibc
-Conflicts:      %{_cross_name}-glibc-bootstrap
-Conflicts:      %{_cross_name}-cross-gcc
+Provides:       rtld(GNU_HASH)
+Provides:       /sbin/ldconfig
+%if %{_target_arch} != %{_host_arch}
+AutoReq:		no
+%endif
 ExcludeArch:    armv7 ppc i386 i686
 
 %description
@@ -98,61 +100,59 @@ searching directories, opening and closing files, reading and
 writing files, string handling, pattern matching, arithmetic,
 and so on.
 
-#Merge all of the packages for the bootstrap packages
+%package devel
+Summary:        Header files for glibc
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
+Provides:       %{name}-headers = %{version}-%{release}
+Provides:       %{name}-static = %{version}-%{release}
+Provides:       %{name}-static%{?_isa} = %{version}-%{release}
 
-# %%package devel
-# Summary:        Header files for glibc
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
-# Provides:       %%{name}-headers = %%{version}-%%{release}
-# Provides:       %%{name}-static = %%{version}-%%{release}
-# Provides:       %%{name}-static%%{?_isa} = %%{version}-%%{release}
+%description devel
+These are the header files of glibc.
 
-# %%description devel
-# These are the header files of glibc.
+%package lang
+Summary:        Additional language files for glibc
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
 
-# %%package lang
-# Summary:        Additional language files for glibc
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
+%description lang
+These are the additional language files of glibc.
 
-# %%description lang
-# These are the additional language files of glibc.
+%package i18n
+Summary:        Additional internationalization files for glibc
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
 
-# %%package i18n
-# Summary:        Additional internationalization files for glibc
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
+%description i18n
+These are the additional internationalization files of glibc.
 
-# %%description i18n
-# These are the additional internationalization files of glibc.
+%package iconv
+Summary:        gconv modules for glibc
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
 
-# %%package iconv
-# Summary:        gconv modules for glibc
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
+%description iconv
+These are gconv modules for iconv().
 
-# %%description iconv
-# These are gconv modules for iconv().
+%package tools
+Summary:        tools for glibc
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
 
-# %%package tools
-# Summary:        tools for glibc
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
+%description tools
+Extra tools for glibc.
 
-# %%description tools
-# Extra tools for glibc.
+%package nscd
+Summary:        Name Service Cache Daemon
+Group:          Applications/System
+Requires:       %{name} = %{version}-%{release}
 
-# %%package nscd
-# Summary:        Name Service Cache Daemon
-# Group:          Applications/System
-# Requires:       %%{name} = %%{version}-%%{release}
-
-# %%description nscd
-# Name Service Cache Daemon
+%description nscd
+Name Service Cache Daemon
 
 %prep
-%setup -q -n glibc-%{version}
+%setup -q
 sed -i 's/\\$$(pwd)/`pwd`/' timezone/Makefile
 %patch0 -p1
 %patch1 -p1
@@ -162,7 +162,6 @@ sed -i 's/\\$$(pwd)/`pwd`/' timezone/Makefile
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
-
 install -vdm 755 %{_builddir}/%{name}-build
 # do not try to explicitly provide GLIBC_PRIVATE versioned libraries
 %define __find_provides %{_builddir}/%{name}-%{version}/find_provides.sh
@@ -192,137 +191,200 @@ chmod +x find_requires.sh
 #___EOF
 
 %build
-# What flags do we want here?
-CFLAGS=""
-CXXFLAGS=""
-#CFLAGS="`echo " %%{build_cflags} " | sed 's/-Wp,-D_FORTIFY_SOURCE=2//'`"
-#CXXFLAGS="`echo " %%{build_cxxflags} " | sed 's/-Wp,-D_FORTIFY_SOURCE=2//'`"
+%if %{_target_arch} != %{_host_arch}
+export PATH="%{_cross_bindir}":$PATH 
+%endif
+CFLAGS="`echo " %{build_cflags} " | sed 's/-Wp,-D_FORTIFY_SOURCE=2//'`"
+CXXFLAGS="`echo " %{build_cxxflags} " | sed 's/-Wp,-D_FORTIFY_SOURCE=2//'`"
 export CFLAGS
 export CXXFLAGS
 
-# Need to make some temp directories to put files into, we don't want to polute our
-# build machines directores and we shouldn't be touching BUILDROOT yet.
-TEMP_SYSROOT="%{_builddir}/temp_sysroot/"
-cp -r "%{_cross_sysroot}" "$TEMP_SYSROOT"
-
-export PATH="%{_cross_prefix}%{_bindir}":$PATH
-
 cd %{_builddir}/%{name}-build
-../glibc-%{version}/configure \
-            --prefix=/ \
-            --build=%{_host_arch}-%{_vendor}-linux-gnu \
-            --host=%{_tuple} \
-            --target=%{_tuple} \
-            --with-sysroot="$TEMP_SYSROOT" \
-            --with-headers="$TEMP_SYSROOT/%{_includedir}" \
-            --disable-multilib \
-            libc_cv_forced_unwind=yes \
-            --disable-werror
-
-make %{?_smp_mflags} DESTDIR=$TEMP_SYSROOT install-bootstrap-headers=yes install-headers
-make %{?_smp_mflags} csu/subdir_lib
-# Depending on the state of the sysroot, /lib may already exist
-mkdir -p "$TEMP_SYSROOT/%{_libdir}"
-install csu/crt1.o csu/crti.o csu/crtn.o "$TEMP_SYSROOT/%{_libdir}"
-%{_cross_name}-gcc -nostdlib -nostartfiles -shared -x c /dev/null -o "$TEMP_SYSROOT%{_libdir}/libc.so"
+../%{name}-%{version}/configure \
+        --prefix=%{_prefix} \
+%if %{_target_arch} != %{_host_arch}
+		--host=%{_tuple} \
+		--with-headers=%{_cross_includedir} \
+%endif
+        --disable-profile \
+        --disable-werror \
+        --enable-kernel=3.2 \
+        --enable-bind-now \
+        --disable-experimental-malloc \
+%ifarch x86_64
+        --enable-cet \
+%endif
+        --disable-silent-rules
 
 # Sometimes we have false "out of memory" make error
 # just rerun/continue make to workaroung it.
-#make %%{?_smp_mflags} || make %%{?_smp_mflags} || make %%{?_smp_mflags}
+make %{?_smp_mflags} || make %{?_smp_mflags} || make %{?_smp_mflags}
 
 %install
-cd %{_builddir}/%{name}-build
-make %{?_smp_mflags} DESTDIR="%{buildroot}%{_cross_sysroot}" install-bootstrap-headers=yes install-headers
-touch %{buildroot}%{_cross_sysroot}%{_includedir}/gnu/stubs.h
-mkdir %{buildroot}%{_cross_sysroot}/%{_libdir}
-install csu/crt1.o csu/crti.o csu/crtn.o ../temp_sysroot/%{_libdir}/libc.so %{buildroot}%{_cross_sysroot}/%{_libdir}
-
-# #       Do not remove static libs
-# pushd %%{_builddir}/glibc-build
-# #       Create directories
-# make install_root=%%{buildroot} install
-# install -vdm 755 %%{buildroot}%%{_sysconfdir}/ld.so.conf.d
-# install -vdm 755 %%{buildroot}%%{_var}/cache/nscd
-# install -vdm 755 %%{buildroot}%%{_libdir}/locale
-# cp -v ../%%{name}-%%{version}/nscd/nscd.conf %%{buildroot}%%{_sysconfdir}/nscd.conf
-# #       Install locale generation script and config file
-# cp -v %%{SOURCE2} %%{buildroot}%%{_sysconfdir}
-# cp -v %%{SOURCE1} %%{buildroot}/sbin
-# #       Remove unwanted cruft
-# rm -rf %%{buildroot}%%{_infodir}
-# #       Install configuration files
+#       Do not remove static libs
+pushd %{_builddir}/glibc-build
+#       Create directories
+make install_root=%{buildroot} install
+install -vdm 755 %{buildroot}%{_sysconfdir}/ld.so.conf.d
+install -vdm 755 %{buildroot}%{_var}/cache/nscd
+install -vdm 755 %{buildroot}%{_libdir}/locale
+cp -v ../%{name}-%{version}/nscd/nscd.conf %{buildroot}%{_sysconfdir}/nscd.conf
+#       Install locale generation script and config file
+cp -v %{SOURCE2} %{buildroot}%{_sysconfdir}
+cp -v %{SOURCE1} %{buildroot}/sbin
+#       Remove unwanted cruft
+rm -rf %{buildroot}%{_infodir}
+#       Install configuration files
 
 # Spaces should not be used in nsswitch.conf in the begining of new line
 # Only tab should be used as it expects the same in source code.
 # Otherwise "altfiles" will not be added. which may cause dbus.service failure
-# cat > %{buildroot}%{_sysconfdir}/nsswitch.conf <<- "EOF"
-# #       Begin /etc/nsswitch.conf
+cat > %{buildroot}%{_sysconfdir}/nsswitch.conf <<- "EOF"
+#       Begin /etc/nsswitch.conf
 
-# 	passwd: files
-# 	group: files
-# 	shadow: files
+	passwd: files
+	group: files
+	shadow: files
 
-# 	hosts: files dns
-# 	networks: files
+	hosts: files dns
+	networks: files
 
-# 	protocols: files
-# 	services: files
-# 	ethers: files
-# 	rpc: files
-# #       End /etc/nsswitch.conf
-# EOF
-# cat > %{buildroot}%{_sysconfdir}/ld.so.conf <<- "EOF"
-# #       Begin /etc/ld.so.conf
-# 	%{_prefix}/local/lib
-# 	/opt/lib
-# 	include %{_sysconfdir}/ld.so.conf.d/*.conf
-# EOF
-# popd
-#%find_lang %{name} --all-name
-# pushd localedata
-# # Generate out of locale-archive an (en_US.) UTF-8 locale
-# mkdir -p %{buildroot}%{_lib}/locale
-# I18NPATH=. GCONV_PATH=../../glibc-build/iconvdata LC_ALL=C ../../glibc-build/locale/localedef --no-archive --prefix=%{buildroot} -A ../intl/locale.alias -i locales/en_US -c -f charmaps/UTF-8 en_US.UTF-8
-# mv %{buildroot}%{_lib}/locale/en_US.utf8 %{buildroot}%{_lib}/locale/en_US.UTF-8
-# popd
+	protocols: files
+	services: files
+	ethers: files
+	rpc: files
+#       End /etc/nsswitch.conf
+EOF
+cat > %{buildroot}%{_sysconfdir}/ld.so.conf <<- "EOF"
+#       Begin /etc/ld.so.conf
+	%{_prefix}/local/lib
+	/opt/lib
+	include %{_sysconfdir}/ld.so.conf.d/*.conf
+EOF
+popd
+%find_lang %{name} --all-name
+pushd localedata
+# Generate out of locale-archive an (en_US.) UTF-8 locale
+mkdir -p %{buildroot}%{_lib}/locale
+%if %{_target_arch} != %{_host_arch}
+# Use native build system's localedef
+export LOCALEDEF=localedef
+%else
+export LOCALEDEF=../../glibc-build/locale/localedef
+%endif
+I18NPATH=. GCONV_PATH=../../glibc-build/iconvdata LC_ALL=C ${LOCALEDEF} --no-archive --prefix=%{buildroot} -A ../intl/locale.alias -i locales/en_US -c -f charmaps/UTF-8 en_US.UTF-8
+mv %{buildroot}%{_lib}/locale/en_US.utf8 %{buildroot}%{_lib}/locale/en_US.UTF-8
+popd
 # to do not depend on /bin/bash
-# sed -i 's@#! /bin/bash@#! /bin/sh@' %{buildroot}%{_bindir}/ldd
-# sed -i 's@#!/bin/bash@#!/bin/sh@' %{buildroot}%{_bindir}/tzselect
+sed -i 's@#! /bin/bash@#! /bin/sh@' %{buildroot}%{_bindir}/ldd
+sed -i 's@#!/bin/bash@#!/bin/sh@' %{buildroot}%{_bindir}/tzselect
 
-# %check
-# cd %{_builddir}/glibc-build
-# make %{?_smp_mflags} check ||:
-# # These 2 persistant false positives are OK
-# # XPASS for: elf/tst-protected1a and elf/tst-protected1b
-# [ `grep ^XPASS tests.sum | wc -l` -ne 2 -a `grep "^XPASS: elf/tst-protected1[ab]" tests.sum | wc -l` -ne 2 ] && exit 1 ||:
+%if %{_target_arch} != %{_host_arch}
+# ldconfig typically generates the ld.so.cache but we cannot run the target version's ldconfig,
+# so just touch the file
+touch %{buildroot}/%{_sysconfdir}/ld.so.cache
+%endif
 
-# # FAIL (intermittent) in chroot but PASS in container:
-# # posix/tst-spawn3 and stdio-common/test-vfprintf
-# n=0
-# grep "^FAIL: posix/tst-spawn3" tests.sum >/dev/null && n=$((n+1)) ||:
-# grep "^FAIL: stdio-common/test-vfprintf" tests.sum >/dev/null && n=$((n+1)) ||:
-# # FAIL always on overlayfs/aufs (in container)
-# grep "^FAIL: posix/tst-dir" tests.sum >/dev/null && n=$((n+1)) ||:
+%check
+cd %{_builddir}/glibc-build
+make %{?_smp_mflags} check ||:
+# These 2 persistant false positives are OK
+# XPASS for: elf/tst-protected1a and elf/tst-protected1b
+[ `grep ^XPASS tests.sum | wc -l` -ne 2 -a `grep "^XPASS: elf/tst-protected1[ab]" tests.sum | wc -l` -ne 2 ] && exit 1 ||:
 
-# #https://sourceware.org/glibc/wiki/Testing/Testsuite
-# grep "^FAIL: nptl/tst-eintr1" tests.sum >/dev/null && n=$((n+1)) ||:
-# #This happens because the kernel fails to reap exiting threads fast enough,
-# #eventually resulting an EAGAIN when pthread_create is called within the test.
+# FAIL (intermittent) in chroot but PASS in container:
+# posix/tst-spawn3 and stdio-common/test-vfprintf
+n=0
+grep "^FAIL: posix/tst-spawn3" tests.sum >/dev/null && n=$((n+1)) ||:
+grep "^FAIL: stdio-common/test-vfprintf" tests.sum >/dev/null && n=$((n+1)) ||:
+# FAIL always on overlayfs/aufs (in container)
+grep "^FAIL: posix/tst-dir" tests.sum >/dev/null && n=$((n+1)) ||:
 
-# # check for exact 'n' failures
-# [ `grep ^FAIL tests.sum | wc -l` -ne $n ] && exit 1 ||:
+#https://sourceware.org/glibc/wiki/Testing/Testsuite
+grep "^FAIL: nptl/tst-eintr1" tests.sum >/dev/null && n=$((n+1)) ||:
+#This happens because the kernel fails to reap exiting threads fast enough,
+#eventually resulting an EAGAIN when pthread_create is called within the test.
 
-# %post -p /sbin/ldconfig
-# %postun -p /sbin/ldconfig
+# check for exact 'n' failures
+[ `grep ^FAIL tests.sum | wc -l` -ne $n ] && exit 1 ||:
+
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %files
 %defattr(-,root,root)
 %license LICENSES
-%{_cross_sysroot}%{_libdir}/*.so
-%{_cross_sysroot}%{_libdir}/*.o
-%{_cross_sysroot}%{_includedir}/*
+%{_libdir}/locale/*
+%dir %{_sysconfdir}/ld.so.conf.d
+%config(noreplace) %{_sysconfdir}/nsswitch.conf
+%config(noreplace) %{_sysconfdir}/ld.so.conf
+%config(noreplace) %{_sysconfdir}/rpc
+%config(missingok,noreplace) %{_sysconfdir}/ld.so.cache
+%config %{_sysconfdir}/locale-gen.conf
+/lib64/*
+%ifarch aarch64
+%exclude /lib
+%endif
+%exclude /lib64/libpcprofile.so
+%{_lib64dir}/*.so
+/sbin/ldconfig
+/sbin/locale-gen.sh
+%{_sbindir}/zdump
+%{_sbindir}/zic
+%{_sbindir}/iconvconfig
+%{_bindir}/*
+%{_libexecdir}/*
+%{_datadir}/i18n/charmaps/UTF-8.gz
+%{_datadir}/i18n/charmaps/ISO-8859-1.gz
+%{_datadir}/i18n/locales/en_US
+%{_datarootdir}/locale/locale.alias
+%exclude %{_localstatedir}/lib/nss_db/Makefile
+%exclude %{_bindir}/mtrace
+%exclude %{_bindir}/pcprofiledump
+%exclude %{_bindir}/xtrace
+
+%files iconv
+%defattr(-,root,root)
+%{_lib64dir}/gconv/*
+
+%files tools
+%defattr(-,root,root)
+%{_bindir}/mtrace
+%{_bindir}/pcprofiledump
+%{_bindir}/xtrace
+/sbin/sln
+%{_lib64dir}/audit/*
+/lib64/libpcprofile.so
+
+%files nscd
+%defattr(-,root,root)
+%config(noreplace) %{_sysconfdir}/nscd.conf
+%{_sbindir}/nscd
+%dir %{_localstatedir}/cache/nscd
+
+%files i18n
+%defattr(-,root,root)
+%{_datadir}/i18n/charmaps/*.gz
+%{_datadir}/i18n/locales/*
+%exclude %{_datadir}/i18n/charmaps/UTF-8.gz
+%exclude %{_datadir}/i18n/charmaps/ISO-8859-1.gz
+%exclude %{_datadir}/i18n/locales/en_US
+
+%files devel
+%defattr(-,root,root)
+# TODO: Excluding for now to remove dependency on PERL
+# /usr/bin/mtrace
+%{_lib64dir}/*.a
+%{_lib64dir}/*.o
+%{_includedir}/*
+
+%files -f %{name}.lang lang
+%defattr(-,root,root)
 
 %changelog
+* Tue Mar 02 2021 Chris Co <chrco@microsoft.com> - 2.28-15
+- Enable cross compilation
+
 * Thu Dec 10 2020 Joe Schmitt <joschmit@microsoft.com> - 2.28-14
 - Provide isa version of glibc-static.
 
