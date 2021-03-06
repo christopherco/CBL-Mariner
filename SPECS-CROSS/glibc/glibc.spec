@@ -89,6 +89,9 @@ Requires:       filesystem
 Provides:       %{name}-common = %{version}-%{release}
 Provides:       rtld(GNU_HASH)
 Provides:       /sbin/ldconfig
+%if %{_target_arch} != %{_host_arch}
+AutoReq:		no
+%endif
 ExcludeArch:    armv7 ppc i386 i686
 
 %description
