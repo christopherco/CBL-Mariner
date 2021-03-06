@@ -63,8 +63,9 @@ Source0:        ftp://ftp.invisible-island.net/%{name}/%{name}-%{version}.tar.gz
 
 %if %{_target_arch} != %{_host_arch}
 #BuildRequires:  aarch64-mariner-linux-gnu-cross-gcc
+BuildRequires:  glibc-devel%{?_isa}
 %endif
-#Requires:       ncurses-libs = %{version}-%{release}
+Requires:       ncurses-libs = %{version}-%{release}
 
 %description
 The Ncurses package contains libraries for terminal-independent
@@ -121,25 +122,27 @@ export AS=%{_tuple_name}as
 export RANLIB=%{_tuple_name}ranlib
 export LD=%{_tuple_name}ld
 export STRIP=%{_tuple_name}strip
+export CPPFLAGS="-I%{_cross_sysroot}/usr/include -I%{_cross_sysroot}/include"
+export LDFLAGS=-L%{_cross_sysroot}/lib
 #export CROSS_COMPILE=%{_tuple_name}
 %define cross_configure \
   %{set_build_flags}; \
   %{_configure} --target=%{_tuple} --host=%{_host} --build=%{_build} \\\
         --program-prefix=%{?_program_prefix} \\\
         --disable-dependency-tracking \\\
-        --prefix=%{_cross_prefix} \\\
+        --prefix=%{_prefix} \\\
         --exec-prefix=%{_exec_prefix} \\\
-        --bindir=%{_cross_sysroot}/bin\\\
-        --sbindir=%{_cross_sysroot}/sbin \\\
-        --sysconfdir=%{_cross_sysroot}/%{_sysconfdir} \\\
-        --datadir=%{_cross_sysroot}/%{_datadir} \\\
-        --includedir=%{_cross_sysroot}/include \\\
-        --libdir=%{_cross_sysroot}/lib \\\
-        --libexecdir=%{_cross_sysroot}%{_libexecdir} \\\
-        --localstatedir=%{_cross_sysroot}%{_localstatedir} \\\
-        --sharedstatedir=%{_cross_sysroot}%{_sharedstatedir} \\\
-        --mandir=%{_cross_sysroot}%{_mandir} \\\
-        --infodir=%{_cross_infodir}
+        --bindir=%{_bindir} \\\
+        --sbindir=%{_sbindir} \\\
+        --sysconfdir=%{_sysconfdir} \\\
+        --datadir=%{_datadir} \\\
+        --includedir=%{_includedir} \\\
+        --libdir=%{_libdir} \\\
+        --libexecdir=%{_libexecdir} \\\
+        --localstatedir=%{_localstatedir} \\\
+        --sharedstatedir=%{_sharedstatedir} \\\
+        --mandir=%{_mandir} \\\
+        --infodir=%{_infodir}
 %endif
 common_options="\
     --enable-colorfgbg \
