@@ -1,5 +1,6 @@
 {
  "Signatures": {
-  "grub-2.04.tar.xz": "e5292496995ad42dabe843a0192cf2a2c502e7ffcc7479398232b10a472df77d"
+  "gnulib-d271f868a8df9bbec29049d01e056481b7a1a263.tar.gz": "4e23415ae2977ffca15e07419ceff3e9334d0369eafc9e7ae2578f8dd9a4839c",
+  "grub-635ef55ed1252f92fe3bf70caefd185dcc507c43.tar.gz": "e099d18bdeef5312765f20c6de3384ca9ff03f776f1c7632b1e4bc4d1715a961"
  }
 }

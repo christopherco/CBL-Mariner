@@ -1,15 +1,18 @@
 %define debug_package %{nil}
 %define __os_install_post %{nil}
+%global gnulibversion d271f868a8df9bbec29049d01e056481b7a1a263
+
 Summary:        GRand Unified Bootloader
 Name:           grub2
-Version:        2.04
+Version:        2.05
 Release:        1%{?dist}
 License:        GPLv3+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Applications/System
 URL:            https://www.gnu.org/software/grub
-Source0:        ftp://ftp.gnu.org/gnu/grub/grub-2.04.tar.xz
+Source0:        ftp://ftp.gnu.org/gnu/grub/grub-635ef55ed1252f92fe3bf70caefd185dcc507c43.tar.gz
+Source1:        https://git.savannah.gnu.org/cgit/gnulib.git/snapshot/gnulib-%{gnulibversion}.tar.gz
 
 Patch0:         release-to-master.patch
 Patch1:         0001-Add-support-for-Linux-EFI-stub-loading.patch
@@ -98,21 +101,13 @@ Patch100:       0001-efinet-do-not-start-EFI-networking-at-module-init-ti.patch
 BuildRequires:  device-mapper-devel
 BuildRequires:  systemd-devel
 BuildRequires:  xz-devel
+BuildRequires:  autoconf
 
 Requires:       device-mapper
 Requires:       xz
 
 %description
 The GRUB package contains the GRand Unified Bootloader.
-
-%package lang
-Summary:        Additional language files for grub
-Group:          System Environment/Programming
-
-Requires:       %{name} = %{version}
-
-%description lang
-These are the additional language files of grub.
 
 %ifarch x86_64
 %package pc
@@ -135,10 +130,13 @@ Requires:       %{name} = %{version}
 Additional library files for grub
 
 %prep
-%setup -q -n grub-%{version}
+%setup -q -n grub-635ef55ed1252f92fe3bf70caefd185dcc507c43
+cp %{SOURCE1} gnulib-%{gnulibversion}.tar.gz
+tar -zxf gnulib-%{gnulibversion}.tar.gz
+mv gnulib-%{gnulibversion} gnulib
 
 %build
-./autogen.sh
+./bootstrap --no-git --gnulib-srcdir=./gnulib
 %ifarch x86_64
 mkdir build-for-pc
 pushd build-for-pc
@@ -227,6 +225,7 @@ rm -rf %{buildroot}%{_infodir}
 %config() %{_sysconfdir}/grub.d/10_linux
 %config() %{_sysconfdir}/grub.d/20_linux_xen
 %config() %{_sysconfdir}/grub.d/30_os-prober
+%config() %{_sysconfdir}/grub.d/30_uefi-firmware
 %config(noreplace) %{_sysconfdir}/grub.d/40_custom
 %config(noreplace) %{_sysconfdir}/grub.d/41_custom
 %{_sysconfdir}/grub.d/README
@@ -250,11 +249,10 @@ rm -rf %{buildroot}%{_infodir}
 %{_libdir}/grub/*
 %endif
 
-%files lang
-%defattr(-,root,root)
-%{_datarootdir}/locale/*
-
 %changelog
+* Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.05-1
+- commit before recent security patches
+
 * Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.04-1
 - 2.04
 
