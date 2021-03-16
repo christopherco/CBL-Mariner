@@ -3,7 +3,7 @@
 Summary:        GRand Unified Bootloader
 Name:           grub2
 Version:        2.02
-Release:        26%{?dist}
+Release:        27%{?dist}
 License:        GPLv3+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -134,81 +134,8 @@ Requires:       %{name} = %{version}
 %description efi
 Additional library files for grub
 
-%package efi-unsigned
-Summary:        Unsigned GRUB UEFI image
-Group:          System Environment/Base
-
-%description efi-unsigned
-Unsigned GRUB UEFI image
-
-%package efi-binary
-Summary:        GRUB UEFI image
-Group:          System Environment/Base
-
-%description efi-binary
-GRUB UEFI bootloader binaries
-
 %prep
 %setup -q -n grub-%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%ifarch aarch64
-%patch100 -p1
-%endif
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
-%patch29 -p1
-%patch30 -p1
-%patch31 -p1
-%patch32 -p1
-# Nopatch 33 and 34
-%patch35 -p1
-%patch36 -p1
-%patch37 -p1
-%patch38 -p1
-%patch39 -p1
-%patch40 -p1
-%patch41 -p1
-%patch42 -p1
-%patch43 -p1
-%patch44 -p1
-%patch45 -p1
-%patch46 -p1
-%patch47 -p1
-%patch48 -p1
-%patch49 -p1
-%patch50 -p1
-%patch51 -p1
-%patch52 -p1
-%patch53 -p1
-%patch54 -p1
-%patch55 -p1
-%patch56 -p1
 
 %build
 ./autogen.sh
@@ -287,34 +214,6 @@ touch %{buildroot}/boot/%{name}/grub.cfg
 chmod 600 %{buildroot}/boot/%{name}/grub.cfg
 rm -rf %{buildroot}%{_infodir}
 
-# Generate grub efi image
-install -d %{buildroot}%{_datadir}/grub2-efi
-%ifarch x86_64
-./install-for-efi/usr/bin/grub2-mkimage -d ./install-for-efi/usr/lib/grub/x86_64-efi/ -o %{buildroot}%{_datadir}/grub2-efi/grubx64.efi -p /boot/grub2 -O x86_64-efi fat iso9660 part_gpt part_msdos normal boot linux configfile loopback chain efifwsetup efi_gop efi_uga ls search search_label search_fs_uuid search_fs_file gfxterm gfxterm_background gfxterm_menu test all_video loadenv exfat ext2 udf halt gfxmenu png tga lsefi help probe echo lvm cryptodisk luks gcry_rijndael gcry_sha512
-%endif
-%ifarch aarch64
-./install-for-efi/usr/bin/grub2-mkimage -d ./install-for-efi/usr/lib/grub/arm64-efi/ -o %{buildroot}%{_datadir}/grub2-efi/grubaa64.efi -p /boot/grub2 -O arm64-efi fat iso9660 part_gpt part_msdos normal boot linux configfile loopback chain efifwsetup efi_gop ls search search_label search_fs_uuid search_fs_file gfxterm gfxterm_background gfxterm_menu test all_video loadenv exfat ext2 udf halt gfxmenu png tga lsefi help probe echo lvm cryptodisk luks gcry_rijndael gcry_sha512
-%endif
-
-# Install to efi directory
-EFI_BOOT_DIR=%{buildroot}/boot/efi/EFI/BOOT
-GRUB_MODULE_NAME=
-GRUB_MODULE_SOURCE=
-
-install -d $EFI_BOOT_DIR
-
-%ifarch x86_64
-GRUB_MODULE_NAME=grubx64.efi
-GRUB_MODULE_SOURCE=%{buildroot}%{_datadir}/grub2-efi/grubx64.efi
-%endif
-
-%ifarch aarch64
-GRUB_MODULE_NAME=grubaa64.efi
-GRUB_MODULE_SOURCE=%{buildroot}%{_datadir}/grub2-efi/grubaa64.efi
-%endif
-
-cp $GRUB_MODULE_SOURCE $EFI_BOOT_DIR/$GRUB_MODULE_NAME
-
 %post   -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
 
@@ -346,17 +245,6 @@ cp $GRUB_MODULE_SOURCE $EFI_BOOT_DIR/$GRUB_MODULE_NAME
 %{_libdir}/grub/x86_64-efi
 %endif
 
-%files efi-unsigned
-%{_datadir}/grub2-efi/*
-
-%files efi-binary
-%ifarch x86_64
-/boot/efi/EFI/BOOT/grubx64.efi
-%endif
-%ifarch aarch64
-/boot/efi/EFI/BOOT/grubaa64.efi
-%endif
-
 %ifarch aarch64
 %files efi
 %{_libdir}/grub/*
@@ -367,6 +255,9 @@ cp $GRUB_MODULE_SOURCE $EFI_BOOT_DIR/$GRUB_MODULE_NAME
 %{_datarootdir}/locale/*
 
 %changelog
+* Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.02-27
+- No patches
+
 * Mon Dec 14 2020 Andrew Phelps <anphel@microsoft.com> - 2.02-26
 - Modify check test
 
