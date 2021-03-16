@@ -4,14 +4,14 @@
 
 Summary:        GRand Unified Bootloader
 Name:           grub2
-Version:        2.05
-Release:        1%{?dist}
+Version:        2.06
+Release:        2%{?dist}
 License:        GPLv3+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Applications/System
 URL:            https://www.gnu.org/software/grub
-Source0:        ftp://ftp.gnu.org/gnu/grub/grub-635ef55ed1252f92fe3bf70caefd185dcc507c43.tar.gz
+Source0:        ftp://ftp.gnu.org/gnu/grub/grub-8fcfd1e0fc72d58766ce3dc09cf883c032f063f6.tar.gz
 Source1:        https://git.savannah.gnu.org/cgit/gnulib.git/snapshot/gnulib-%{gnulibversion}.tar.gz
 
 Patch0:         release-to-master.patch
@@ -130,7 +130,7 @@ Requires:       %{name} = %{version}
 Additional library files for grub
 
 %prep
-%setup -q -n grub-635ef55ed1252f92fe3bf70caefd185dcc507c43
+%setup -q -n grub-8fcfd1e0fc72d58766ce3dc09cf883c032f063f6
 cp %{SOURCE1} gnulib-%{gnulibversion}.tar.gz
 tar -zxf gnulib-%{gnulibversion}.tar.gz
 mv gnulib-%{gnulibversion} gnulib
@@ -250,6 +250,12 @@ rm -rf %{buildroot}%{_infodir}
 %endif
 
 %changelog
+* Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.06-2
+- pre-2.06-rc1
+
+* Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.06-1
+- 2.06-rc1
+
 * Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.05-1
 - commit before recent security patches
 
