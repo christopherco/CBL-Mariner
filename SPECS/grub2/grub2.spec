@@ -2,14 +2,14 @@
 %define __os_install_post %{nil}
 Summary:        GRand Unified Bootloader
 Name:           grub2
-Version:        2.02
-Release:        27%{?dist}
+Version:        2.04
+Release:        1%{?dist}
 License:        GPLv3+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
 Group:          Applications/System
 URL:            https://www.gnu.org/software/grub
-Source0:        ftp://ftp.gnu.org/gnu/grub/grub-2.02.tar.xz
+Source0:        ftp://ftp.gnu.org/gnu/grub/grub-2.04.tar.xz
 
 Patch0:         release-to-master.patch
 Patch1:         0001-Add-support-for-Linux-EFI-stub-loading.patch
@@ -255,6 +255,9 @@ rm -rf %{buildroot}%{_infodir}
 %{_datarootdir}/locale/*
 
 %changelog
+* Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.04-1
+- 2.04
+
 * Tue Mar 16 2021 Chris Co <chrco@@microsoft.com> - 2.02-27
 - No patches
 
