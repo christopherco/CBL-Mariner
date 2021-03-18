@@ -14,7 +14,7 @@ Distribution:   Mariner
 Source0:        https://github.com/rhboot/shim/archive/shim-%{version}-rc2.tar.gz
 Source1:        https://github.com/rhboot/gnu-efi/archive/%{gnuefiversion}.tar.gz
 Source2:        sbat.csv.in
-Source100:      cbl-mariner-ca.der
+Source100:      cbl-mariner-ca-20200513.der
 
 BuildRequires:  dos2unix
 BuildRequires:  vim-extra
