@@ -18,7 +18,7 @@
                 "packagelists/iso-initrd-packages.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-signed-x64"
             },
             "AdditionalFiles": {
                 "../../out/tools/imager": "/installer/imager",

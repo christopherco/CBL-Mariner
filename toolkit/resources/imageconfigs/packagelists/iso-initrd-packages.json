@@ -29,7 +29,7 @@
         "gptfdisk",
         "grep",
         "grub2-efi",
-        "grub2-efi-binary",
+        "grub2-efi-binary-signed-x64",
         "grub2-pc",
         "gzip",
         "haveged",

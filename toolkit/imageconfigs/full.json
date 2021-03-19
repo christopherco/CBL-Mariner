@@ -9,7 +9,7 @@
                 "packagelists/core-packages-image.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-signed-x64"
             }
         },
         {
@@ -20,7 +20,7 @@
                 "packagelists/core-packages-image.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-signed-x64"
             }
         },
         {
@@ -30,7 +30,7 @@
                 "packagelists/core-packages-image.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-signed-x64"
             }
         },
         {
@@ -41,7 +41,7 @@
                 "packagelists/read-only-root-packages.json"
             ],
             "KernelOptions": {
-                "default": "kernel"
+                "default": "kernel-signed-x64"
             },
             "ReadOnlyVerityRoot": {
                 "Enable": true,
