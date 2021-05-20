@@ -15,7 +15,7 @@ Source0:        kernel-%{version}.tar.gz
 Source1:        config
 Source2:        config_aarch64
 Source3:        sha512hmac-openssl.sh
-Source4:        testkey.pem
+Source4:        cbl-mariner-ca-20210127.pem
 # Kernel CVEs are addressed by moving to a newer version of the stable kernel.
 # Since kernel CVEs are filed against the upstream kernel version and not the
 # stable kernel version, our automated tooling will still flag the CVE as not

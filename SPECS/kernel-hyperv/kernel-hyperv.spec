@@ -14,7 +14,7 @@ URL:            https://github.com/microsoft/CBL-Mariner-Linux-Kernel
 Source0:        kernel-%{version}.tar.gz
 Source1:        config
 Source2:        sha512hmac-openssl.sh
-Source3:        testkey.pem
+Source3:        cbl-mariner-ca-20210127.pem
 BuildRequires:  audit-devel
 BuildRequires:  bash
 BuildRequires:  bc
