@@ -1,3 +1,50 @@
+# Globals which should be in a macro file.
+# These should be set programatically in the future.
+%global _host_arch      x86_64
+%global _target_arch    aarch64
+
+%global _tuple          %{_target_arch}-%{_vendor}-linux-gnu
+%global _cross_name     %{_target_arch}-%{_vendor}-linux-gnu
+
+# Folders which should be in our macro file
+%global _opt                /opt/
+%global _crossdir           /opt/cross/
+
+# Generally we include '/usr' in most paths.
+# Can we also use '/usr' for our paths? This will bring us in line with the
+# %%configure macro which sets these.
+%global _bindir            /bin
+%global _sbindir           /sbin
+%global _libdir            /lib
+%global _lib64dir          /lib64
+%global _libexecdir        /libexec
+%global _datadir           /share
+%global _docdir            /share/doc
+%global _includedir        /include
+%global _infodir           /share/info
+%global _mandir            /share/man
+%global _oldincludedir     /include
+
+# If we want our cross compile aware packges to also support native, we
+# need logic to switch modes something like this:
+%if %{_target_arch} != %{_host_arch}
+%global _cross_prefix       %{_crossdir}%{_tuple}/
+%global _cross_sysroot      %{_crossdir}%{_tuple}/sysroot/
+%global _cross_includedir   /usr/%{_host}/%{_tuple}/include/
+%global _cross_infodir      %{_crossdir}%{_tuple}/share/info
+%global _cross_bindir       %{_tuple}/bin
+%global _cross_libdir       %{_tuple}/lib
+%global _tuple_name         %{_tuple}-
+%else
+%global _cross_prefix       %{nil}
+%global _cross_sysroot      %{nil}
+%global _cross_includedir   %{_includedir}
+%global _cross_infodir      %{_infodir}
+%global _cross_bindir       %{_bindir}
+%global _cross_libdir       %{_libdir}
+%global _tuple_name         %{nil}
+%endif
+
 Summary:        Statically linked binary providing simplified versions of system commands
 Name:           busybox
 Version:        1.32.0
@@ -11,21 +58,25 @@ Source1:        busybox-static.config
 Source2:        busybox-petitboot.config
 Patch0:         busybox-1.31.1-stime-fix.patch
 Patch1:         CVE-2021-28831.patch
-BuildRequires:  gcc
-BuildRequires:  glibc-devel
-BuildRequires:  libselinux-devel >= 1.27.7-2
-BuildRequires:  libsepol-devel
-# libbb/hash_md5_sha.c
-# https://bugzilla.redhat.com/1024549
-Provides:       bundled(md5-drepper2)
-# This package used to include a bundled copy of uClibc, but we now
-# use the system copy.
-%ifnarch aarch64
-BuildRequires:  uclibc-devel
+#BuildRequires:  gcc
+#BuildRequires:  glibc-devel
+#BuildRequires:  libselinux-devel >= 1.27.7-2
+#BuildRequires:  libsepol-devel
+## libbb/hash_md5_sha.c
+## https://bugzilla.redhat.com/1024549
+#Provides:       bundled(md5-drepper2)
+## This package used to include a bundled copy of uClibc, but we now
+## use the system copy.
+#%ifnarch aarch64
+#BuildRequires:  uclibc-devel
+#%endif
+%if %{_target_arch} != %{_host_arch}
+BuildRequires: %{_cross_name}-binutils
+BuildRequires: %{_cross_name}-cross-gcc
 %endif
 
-%package petitboot
-Summary:        Version of busybox configured for use with petitboot
+#%package petitboot
+#Summary:        Version of busybox configured for use with petitboot
 
 %description
 Busybox is a single binary which includes versions of a large number
@@ -33,12 +84,12 @@ of system commands, including a shell.  This package can be very
 useful for recovering from certain types of system failures,
 particularly those involving broken shared libraries.
 
-%description petitboot
-Busybox is a single binary which includes versions of a large number
-of system commands, including a shell.  The version contained in this
-package is a minimal configuration intended for use with the Petitboot
-bootloader used on PlayStation 3. The busybox package provides a binary
-better suited to normal use.
+#%description petitboot
+#Busybox is a single binary which includes versions of a large number
+#of system commands, including a shell.  The version contained in this
+#package is a minimal configuration intended for use with the Petitboot
+#bootloader used on PlayStation 3. The busybox package provides a binary
+#better suited to normal use.
 
 %prep
 %setup -q
@@ -46,76 +97,89 @@ better suited to normal use.
 %patch1 -p1
 
 %build
-# create static busybox - the executable is kept as busybox-static
-# We use uclibc instead of system glibc, uclibc is several times
-# smaller, this is important for static build.
-# uclibc can't be built on ppc64,s390,ia64, we set $arch to "" in this case
-arch=`uname -m | sed -e 's/i.86/i386/' -e 's/armv7l/arm/' -e 's/armv5tel/arm/' -e 's/aarch64//' -e 's/ppc64le//' -e 's/ppc64//' -e 's/powerpc64//' -e 's/ppc//' -e 's/ia64//' -e 's/s390.*//'`
+# Use the default busybox configuration
+%if %{_target_arch} != %{_host_arch}
+export PATH="%{_crossdir}/%{_cross_bindir}":$PATH
+CFLAGS=""
+CXXFLAGS=""
+export CFLAGS
+export CXXFLAGS
+%endif
 
-cp %{SOURCE1} .config
-# set all new options to defaults
-yes "" | make oldconfig
-# gcc needs to be convinced to use neither system headers, nor libs,
-# nor startfiles (i.e. crtXXX.o files)
-# Also turn the stack protector off, otherwise the program segfaults.
-if test "$arch"; then \
-    mv .config .config1 && \
-    grep -v \
-       -e ^CONFIG_FEATURE_HAVE_RPC \
-       -e ^CONFIG_FEATURE_MOUNT_NFS \
-       -e ^CONFIG_FEATURE_INETD_RPC \
-       -e ^CONFIG_SELINUX \
-       .config1 >.config && \
-    yes "" | make oldconfig && \
-    cat .config && \
-    make V=1 \
-        EXTRA_CFLAGS="-g -isystem %{_includedir}/uClibc -fno-stack-protector" \
-        CFLAGS_busybox="-static -nostartfiles -L%{_libdir}/uClibc %{_libdir}/uClibc/crt1.o %{_libdir}/uClibc/crti.o %{_libdir}/uClibc/crtn.o"; \
-else \
-    mv .config .config1 && \
-    grep -v \
-        -e ^CONFIG_FEATURE_HAVE_RPC \
-        -e ^CONFIG_FEATURE_MOUNT_NFS \
-        -e ^CONFIG_FEATURE_INETD_RPC \
-        .config1 >.config && \
-    echo "# CONFIG_FEATURE_HAVE_RPC is not set" >>.config && \
-    echo "# CONFIG_FEATURE_MOUNT_NFS is not set" >>.config && \
-    echo "# CONFIG_FEATURE_INETD_RPC is not set" >>.config && \
-    yes "" | make oldconfig && \
-    cat .config && \
-    make V=1 CC="gcc %{optflags}"; \
-fi
-cp busybox_unstripped busybox.static
-cp docs/busybox.1 docs/busybox.static.1
-
-# create busybox optimized for petitboot
-make clean
-# copy new configuration file
-cp %{SOURCE2} .config
-# set all new options to defaults
-yes "" | make oldconfig
-# -g is needed for generation of debuginfo.
-# (Don't want to use full-blown $RPM_OPT_FLAGS for this,
-# it makes binary much bigger: -O2 instead of -Os, many other options)
-if test "$arch"; then \
-    cat .config && \
-    make V=1 \
-        EXTRA_CFLAGS="-g -isystem %{_includedir}/uClibc" \
-        CFLAGS_busybox="-static -nostartfiles -L%{_libdir}/uClibc %{_libdir}/uClibc/crt1.o %{_libdir}/uClibc/crti.o %{_libdir}/uClibc/crtn.o"; \
-else \
-    cat .config && \
-    make V=1 CC="gcc %{optflags}"; \
-fi
-cp busybox_unstripped busybox.petitboot
-cp docs/busybox.1 docs/busybox.petitboot.1
+make ARCH=arm64 defconfig
+make ARCH=arm64 CROSS_COMPILE=aarch64-mariner-linux-gnu-
+## create static busybox - the executable is kept as busybox-static
+## We use uclibc instead of system glibc, uclibc is several times
+## smaller, this is important for static build.
+## uclibc can't be built on ppc64,s390,ia64, we set $arch to "" in this case
+#arch=`uname -m | sed -e 's/i.86/i386/' -e 's/armv7l/arm/' -e 's/armv5tel/arm/' -e 's/aarch64//' -e 's/ppc64le//' -e 's/ppc64//' -e 's/powerpc64//' -e 's/ppc//' -e 's/ia64//' -e 's/s390.*//'`
+#
+#cp %{SOURCE1} .config
+## set all new options to defaults
+#yes "" | make oldconfig
+## gcc needs to be convinced to use neither system headers, nor libs,
+## nor startfiles (i.e. crtXXX.o files)
+## Also turn the stack protector off, otherwise the program segfaults.
+#if test "$arch"; then \
+#    mv .config .config1 && \
+#    grep -v \
+#       -e ^CONFIG_FEATURE_HAVE_RPC \
+#       -e ^CONFIG_FEATURE_MOUNT_NFS \
+#       -e ^CONFIG_FEATURE_INETD_RPC \
+#       -e ^CONFIG_SELINUX \
+#       .config1 >.config && \
+#    yes "" | make oldconfig && \
+#    cat .config && \
+#    make V=1 \
+#        EXTRA_CFLAGS="-g -isystem %{_includedir}/uClibc -fno-stack-protector" \
+#        CFLAGS_busybox="-static -nostartfiles -L%{_libdir}/uClibc %{_libdir}/uClibc/crt1.o %{_libdir}/uClibc/crti.o %{_libdir}/uClibc/crtn.o"; \
+#else \
+#    mv .config .config1 && \
+#    grep -v \
+#        -e ^CONFIG_FEATURE_HAVE_RPC \
+#        -e ^CONFIG_FEATURE_MOUNT_NFS \
+#        -e ^CONFIG_FEATURE_INETD_RPC \
+#        .config1 >.config && \
+#    echo "# CONFIG_FEATURE_HAVE_RPC is not set" >>.config && \
+#    echo "# CONFIG_FEATURE_MOUNT_NFS is not set" >>.config && \
+#    echo "# CONFIG_FEATURE_INETD_RPC is not set" >>.config && \
+#    yes "" | make oldconfig && \
+#    cat .config && \
+#    make V=1 CC="gcc %{optflags}"; \
+#fi
+#cp busybox_unstripped busybox.static
+#cp docs/busybox.1 docs/busybox.static.1
+#
+## create busybox optimized for petitboot
+#make clean
+## copy new configuration file
+#cp %{SOURCE2} .config
+## set all new options to defaults
+#yes "" | make oldconfig
+## -g is needed for generation of debuginfo.
+## (Don't want to use full-blown $RPM_OPT_FLAGS for this,
+## it makes binary much bigger: -O2 instead of -Os, many other options)
+#if test "$arch"; then \
+#    cat .config && \
+#    make V=1 \
+#        EXTRA_CFLAGS="-g -isystem %{_includedir}/uClibc" \
+#        CFLAGS_busybox="-static -nostartfiles -L%{_libdir}/uClibc %{_libdir}/uClibc/crt1.o %{_libdir}/uClibc/crti.o %{_libdir}/uClibc/crtn.o"; \
+#else \
+#    cat .config && \
+#    make V=1 CC="gcc %{optflags}"; \
+#fi
+#cp busybox_unstripped busybox.petitboot
+#cp docs/busybox.1 docs/busybox.petitboot.1
 
 %install
-mkdir -p %{buildroot}/sbin
-install -m 755 busybox.static %{buildroot}/sbin/busybox
-install -m 755 busybox.petitboot %{buildroot}/sbin/busybox.petitboot
-mkdir -p %{buildroot}/%{_mandir}/man1
-install -m 644 docs/busybox.static.1 %{buildroot}/%{_mandir}/man1/busybox.1
-install -m 644 docs/busybox.petitboot.1 %{buildroot}/%{_mandir}/man1/busybox.petitboot.1
+make ARCH=arm64 CROSS_COMPILE=aarch64-mariner-linux-gnu- CONFIG_PREFIX=%{buildroot} install
+
+#mkdir -p %{buildroot}/sbin
+#install -m 755 busybox.static %{buildroot}/sbin/busybox
+#install -m 755 busybox.petitboot %{buildroot}/sbin/busybox.petitboot
+#mkdir -p %{buildroot}/%{_mandir}/man1
+#install -m 644 docs/busybox.static.1 %{buildroot}/%{_mandir}/man1/busybox.1
+#install -m 644 docs/busybox.petitboot.1 %{buildroot}/%{_mandir}/man1/busybox.petitboot.1
 
 %files
 %license LICENSE
@@ -123,11 +187,11 @@ install -m 644 docs/busybox.petitboot.1 %{buildroot}/%{_mandir}/man1/busybox.pet
 /sbin/busybox
 %{_mandir}/man1/busybox.1.gz
 
-%files petitboot
-%license LICENSE
-%doc README
-/sbin/busybox.petitboot
-%{_mandir}/man1/busybox.petitboot.1.gz
+#%files petitboot
+#%license LICENSE
+#%doc README
+#/sbin/busybox.petitboot
+#%{_mandir}/man1/busybox.petitboot.1.gz
 
 %changelog
 * Fri Mar 26 2021 Henry Beberman <henry.beberman@microsoft.com> - 1.32.0-2
