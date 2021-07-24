@@ -1,0 +1,8 @@
+{
+    "packages": [
+        "moby-engine",
+        "moby-runc",
+        "moby-containerd",
+        "moby-cli"
+    ]
+}

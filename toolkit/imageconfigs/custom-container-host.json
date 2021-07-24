@@ -1,0 +1,30 @@
+{
+    "Disks": [
+        {
+            "Artifacts": [
+                {
+                    "Name": "container-host",
+                    "Compression": "tar.gz"
+                }
+            ]
+        }
+    ],
+    "SystemConfigs": [
+        {
+            "Name": "Standard",
+            "PackageLists": [
+                "packagelists/core-packages-container.json",
+                "packagelists/container-runtime.json"
+            ],
+            "PostInstallScripts": [
+                {
+                    "Path": "postinstallscripts/core-container/cleanup-and-set-term.sh"
+                },
+                {
+                    "Path": "postinstallscripts/enable-container-runtime.sh"
+                }
+
+            ]
+        }
+    ]
+}
