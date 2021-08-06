@@ -1,0 +1,24 @@
+From bbee5d5dc5e20ea5de96b0897d0d16a647f1c1d6 Mon Sep 17 00:00:00 2001
+From: Dennis Krupenik <dennis@krupenik.com>
+Date: Thu, 10 Sep 2020 17:03:29 +0300
+Subject: [PATCH] Prefer python3 to python2 (#379)
+
+Some distributions do not alias /usr/bin/python3 to /usr/bin/python
+---
+ tests/test_run.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/tests/test_run.sh b/tests/test_run.sh
+index 669ed751..17ef0fac 100755
+--- a/tests/test_run.sh
++++ b/tests/test_run.sh
+@@ -86,6 +86,9 @@ export LUA_PATH
+ if $(command -v python >/dev/null 2>&1)
+ then
+     PYTHON=python
++elif $(command -v python3 >/dev/null 2>&1)
++then
++    PYTHON=python3
+ elif $(command -v python2 >/dev/null 2>&1)
+ then
+     PYTHON=python2
