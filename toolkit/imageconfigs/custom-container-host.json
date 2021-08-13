@@ -13,7 +13,7 @@
         {
             "Name": "Standard",
             "PackageLists": [
-                "packagelists/core-packages-container.json",
+                "packagelists/core-packages-rootfs.json",
                 "packagelists/container-runtime.json"
             ],
             "PostInstallScripts": [
