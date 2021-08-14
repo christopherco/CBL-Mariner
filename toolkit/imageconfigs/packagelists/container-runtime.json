@@ -3,6 +3,8 @@
         "moby-engine",
         "moby-runc",
         "moby-containerd",
-        "moby-cli"
+        "moby-cli",
+        "iputils",
+        "nano"
     ]
 }
