@@ -16,6 +16,9 @@
                 "packagelists/core-packages-rootfs.json",
                 "packagelists/container-runtime.json"
             ],
+            "AdditionalFiles": {
+                "additionalconfigs/hello-world-docker.tar": "/var/hello-world-docker.tar"
+            },
             "PostInstallScripts": [
                 {
                     "Path": "postinstallscripts/core-container/cleanup-and-set-term.sh"
