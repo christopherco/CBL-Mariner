@@ -4,7 +4,7 @@ Name:           luajit
 Version:        2.1.0
 %global apiver %(v=%{version}; echo ${v%.${v#[0-9].[0-9].}})
 %global srcver %{version}%{?rctag:-%{rctag}}
-Release:        0.20%{?rctag:%{rctag}}%{?dist}
+Release:        0.22%{?rctag:%{rctag}}%{?dist}
 Summary:        Just-In-Time Compiler for Lua
 License:        MIT
 URL:            http://luajit.org/
@@ -107,8 +107,6 @@ Patch78: patch-for-ppc64-support.patch
 Patch79: luajit-openresty-features.patch
 Patch80: luajit-update-20190925.patch
 
-ExclusiveArch:  %{arm} %{ix86} x86_64 %{mips} aarch64 s390x ppc64le
-
 BuildRequires:  gcc
 BuildRequires:  make
 
@@ -139,14 +137,14 @@ sed -i -e '/install -m/s/-m/-p -m/' Makefile
 # NOTE: we use amalgamated build as per documentation suggestion doc/install.html
 make amalg Q= E=@: PREFIX=%{_prefix} TARGET_STRIP=: \
            CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}" \
-           MULTILIB=%{_lib} \
+           MULTILIB=/lib \
            %{?_smp_mflags}
 
 %install
 # PREREL= - disable -betaX suffix
 # INSTALL_TNAME - executable name
 %make_install PREFIX=%{_prefix} \
-              MULTILIB=%{_lib}
+              MULTILIB=/lib
 
 rm -rf _tmp_html ; mkdir _tmp_html
 cp -a doc _tmp_html/html
@@ -154,7 +152,7 @@ cp -a doc _tmp_html/html
 # Remove static .a
 find %{buildroot} -type f -name *.a -delete -print
 
-%ldconfig_scriptlets
+#%ldconfig_scriptlets
 
 %check
 
@@ -177,6 +175,12 @@ make check || true
 %{_libdir}/pkgconfig/%{name}.pc
 
 %changelog
+* Mon Aug 16 2021 Chris Co <chrco@microsoft.com> - 2.1.0-0.22beta3
+- Update build requires and build steps to work for CBL-Mariner
+
+* Mon Aug 16 2021 Chris Co <chrco@microsoft.com> - 2.1.0-0.21beta3
+- Initial import from Fedora 35 (license: MIT)
+
 * Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 2.1.0-0.20beta3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
 
