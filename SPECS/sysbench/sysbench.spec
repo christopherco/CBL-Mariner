@@ -1,7 +1,7 @@
 Summary:       System performance benchmark
 Name:          sysbench
 Version:       1.0.20
-Release:       5%{?dist}
+Release:       7%{?dist}
 License:       GPLv2+
 Source0:       https://github.com/akopytov/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
 URL:           https://github.com/akopytov/sysbench/
@@ -11,12 +11,15 @@ Patch0:        sysbench-1.0.20-python3.patch
 
 BuildRequires: make
 BuildRequires: automake
+BuildRequires: ck
 BuildRequires: ck-devel
-BuildRequires: docbook-style-xsl
+#BuildRequires: docbook-style-xsl
 BuildRequires: libaio-devel
 BuildRequires: libtool
 BuildRequires: libxslt
+BuildRequires: luajit
 BuildRequires: luajit-devel
+BuildRequires: which
 %if 0%{?el6}
 BuildRequires: mysql-devel
 %endif
@@ -32,21 +35,21 @@ BuildRequires: libpq-devel
 BuildRequires: postgresql-devel
 %endif
 # Tests
-%{!?el6:BuildRequires: /usr/bin/cram}
-%if 0%{?fedora} || 0%{?rhel} > 7
+#%{!?el6:BuildRequires: /usr/bin/cram}
+#%if 0%{?fedora} || 0%{?rhel} > 7
 BuildRequires: python3
-%else
-BuildRequires: python
-%endif
+#%else
+#BuildRequires: python
+#%endif
 
 # luajit is needed and is not available for ppc64 and ppc64le.
 # Use the same arches as luajit.
 # luajit 2.0.4, which is in EL6 and EL7, doesn't have support for aarch64
-%if 0%{?el6} || 0%{?el7}
-ExclusiveArch:  %{arm} %{ix86} x86_64 %{mips}
-%else
-ExclusiveArch:  %{arm} %{ix86} x86_64 %{mips} aarch64 ppc64le s390x
-%endif
+#%if 0%{?el6} || 0%{?el7}
+#ExclusiveArch:  %{arm} %{ix86} x86_64 %{mips}
+#%else
+#ExclusiveArch:  %{arm} %{ix86} x86_64 %{mips} aarch64 ppc64le s390x
+#%endif
 
 
 %description
@@ -80,13 +83,11 @@ rm -r third_party/concurrency_kit/ck/
 %build
 export CFLAGS="%{optflags}"
 autoreconf -vif
-%configure --with-mysql \
-           --with-pgsql \
-           --with-system-ck \
-           --with-system-luajit \
-           --without-gcc-arch
+#./autogen.sh
+%configure --without-mysql --with-system-luajit --with-system-ck
 
-%make_build
+#%make_build
+make
 
 %install
 %make_install
@@ -114,6 +115,12 @@ rm t/opt_report_interval.t
 
 
 %changelog
+* Mon Aug 16 2021 Chris Co <chrco@microsoft.com> - 1.0.20-7
+- Update build requires and build steps to work for CBL-Mariner
+
+* Thu Aug 05 2021 Chris Co <chrco@microsoft.com> - 1.0.20-6
+- Initial import from Fedora 34 (license: GPLv2)
+
 * Thu Feb 25 2021 Yaakov Selkowitz <yselkowi@redhat.com> - 1.0.20-5
 - Enable on ppc64le and s390x
 - Add upstream patch for python3 in testsuite
