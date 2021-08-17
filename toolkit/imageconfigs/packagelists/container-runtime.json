@@ -5,6 +5,7 @@
         "moby-containerd",
         "moby-cli",
         "iputils",
-        "nano"
+        "nano",
+        "sysbench"
     ]
 }
