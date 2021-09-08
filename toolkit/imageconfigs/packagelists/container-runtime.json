@@ -6,6 +6,16 @@
         "moby-cli",
         "iputils",
         "nano",
-        "sysbench"
+        "sysbench",
+        "ca-certificates",
+        "openssh-server",
+        "kubernetes",
+        "kubernetes-client",
+        "kubernetes-kube-apiserver",
+        "kubernetes-kube-controller-manager",
+        "kubernetes-kube-proxy",
+        "kubernetes-kube-scheduler",
+        "kubernetes-kubeadm",
+        "kubernetes-pause"
     ]
 }
