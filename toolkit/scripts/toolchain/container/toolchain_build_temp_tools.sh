@@ -297,9 +297,9 @@ rm -rf gcc-9.1.0
 
 touch $LFS/logs/temptoolchain/status_gcc_pass2_complete
 
-echo Tcl-8.6.9
-tar xf tcl8.6.9-src.tar.gz
-pushd tcl8.6.9
+echo Tcl-8.6.12
+tar xf tcl8.6.12-src.tar.gz
+pushd tcl8.6.12
 cd unix
 ./configure --prefix=/tools
 make -j$(nproc)
@@ -308,7 +308,7 @@ chmod -v u+w /tools/lib/libtcl8.6.so
 make install-private-headers
 ln -sv tclsh8.6 /tools/bin/tclsh
 popd
-rm -rf tcl8.6.9
+rm -rf tcl8.6.12
 
 touch $LFS/logs/temptoolchain/status_tcl_complete
 
