@@ -184,7 +184,7 @@ rpm-lang-4.14.2.1-4.cm2.x86_64.rpm
 rpm-libs-4.14.2.1-4.cm2.x86_64.rpm
 cpio-2.13-3.cm2.x86_64.rpm
 cpio-lang-2.13-3.cm2.x86_64.rpm
-e2fsprogs-libs-1.45.6-1.cm2.x86_64.rpm
+e2fsprogs-libs-1.46.4-1.cm2.x86_64.rpm
 libsolv-0.7.19-1.cm2.x86_64.rpm
 libsolv-devel-0.7.19-1.cm2.x86_64.rpm
 libssh2-1.9.0-1.cm2.x86_64.rpm
