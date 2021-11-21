@@ -851,15 +851,15 @@ popd
 rm -rf findutils-4.8.0
 touch /logs/status_findutils_complete
 
-echo Groff-1.22.3
-tar xf groff-1.22.3.tar.gz
-pushd groff-1.22.3
+echo Groff-1.22.4
+tar xf groff-1.22.4.tar.gz
+pushd groff-1.22.4
 PAGE=letter ./configure --prefix=/usr
 # Build with single processor due to errors seen with parallel make
 make -j1
 make install
 popd
-rm -rf groff-1.22.3
+rm -rf groff-1.22.4
 touch /logs/status_groff_complete
 
 echo Gzip-1.11
