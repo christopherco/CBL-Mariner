@@ -158,9 +158,9 @@ libarchive-debuginfo-3.4.2-3.cm2.aarch64.rpm
 libarchive-devel-3.4.2-3.cm2.aarch64.rpm
 libassuan-2.5.1-5.cm2.aarch64.rpm
 libassuan-debuginfo-2.5.1-5.cm2.aarch64.rpm
-libcap-2.26-2.cm2.aarch64.rpm
-libcap-debuginfo-2.26-2.cm2.aarch64.rpm
-libcap-devel-2.26-2.cm2.aarch64.rpm
+libcap-2.60-1.cm2.aarch64.rpm
+libcap-debuginfo-2.60-1.cm2.aarch64.rpm
+libcap-devel-2.60-1.cm2.aarch64.rpm
 libcap-ng-0.7.9-4.cm2.aarch64.rpm
 libcap-ng-debuginfo-0.7.9-4.cm2.aarch64.rpm
 libcap-ng-devel-0.7.9-4.cm2.aarch64.rpm
