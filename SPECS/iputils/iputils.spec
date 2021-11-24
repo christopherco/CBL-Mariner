@@ -1,14 +1,14 @@
 Summary:          Programs for basic networking
 Name:             iputils
-Version:          20180629
-Release:          5%{?dist}
+Version:          20210722
+Release:          1%{?dist}
 License:          BSD-3 and GPLv2+ and Rdisc
 URL:              https://github.com/iputils/iputils
 Group:            Applications/Communications
 Vendor:           Microsoft Corporation
 Distribution:     Mariner
-#Source0:         https://github.com/iputils/iputils/archive/s20180629.tar.gz
-Source0:          %{name}-s%{version}.tar.gz
+#Source0:         https://github.com/iputils/iputils/archive/20210722.tar.gz
+Source0:          %{name}-%{version}.tar.gz
 BuildRequires:    libcap-devel libgcrypt-devel
 Requires:         libcap
 Requires:         libgcrypt
@@ -17,7 +17,7 @@ Obsoletes:        inetutils
 %description
 The Iputils package contains programs for basic networking.
 %prep
-%setup -q -n %{name}-s%{version}
+%setup -q -n %{name}-%{version}
 
 %build
 make %{?_smp_mflags} USE_IDN=no USE_GCRYPT=yes
@@ -67,6 +67,8 @@ mv -f RELNOTES.tmp RELNOTES.old
 %caps(cap_net_raw=p cap_net_admin=p) %{_bindir}/ping6
 
 %changelog
+*   Tue Nov 23 2021 Chris Co <chrco@microsoft.com> 20210722-1
+-   Update to 20210722
 *   Wed Jul 29 2020 Andrew Phelps 20180629-5
 -   Add ping6 symlink.
 *   Sat May 09 2020 Nick Samson <nisamson@microsoft.com> 20180629-4
