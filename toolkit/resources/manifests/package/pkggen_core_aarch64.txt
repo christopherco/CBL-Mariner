@@ -170,8 +170,8 @@ openssl-libs-1.1.1k-5.cm2.aarch64.rpm
 openssl-perl-1.1.1k-5.cm2.aarch64.rpm
 openssl-static-1.1.1k-5.cm2.aarch64.rpm
 openssl-debuginfo-1.1.1k-5.cm2.aarch64.rpm
-libcap-2.26-2.cm2.aarch64.rpm
-libcap-devel-2.26-2.cm2.aarch64.rpm
+libcap-2.60-1.cm2.aarch64.rpm
+libcap-devel-2.60-1.cm2.aarch64.rpm
 libcap-ng-0.7.9-4.cm2.aarch64.rpm
 libdb-5.3.28-5.cm2.aarch64.rpm
 libdb-devel-5.3.28-5.cm2.aarch64.rpm
@@ -184,7 +184,7 @@ rpm-lang-4.14.2.1-4.cm2.aarch64.rpm
 rpm-libs-4.14.2.1-4.cm2.aarch64.rpm
 cpio-2.13-3.cm2.aarch64.rpm
 cpio-lang-2.13-3.cm2.aarch64.rpm
-e2fsprogs-libs-1.45.6-1.cm2.aarch64.rpm
+e2fsprogs-libs-1.46.4-1.cm2.aarch64.rpm
 libsolv-0.7.19-1.cm2.aarch64.rpm
 libsolv-devel-0.7.19-1.cm2.aarch64.rpm
 libssh2-1.9.0-1.cm2.aarch64.rpm

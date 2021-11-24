@@ -1126,8 +1126,8 @@
         "type": "other",
         "other": {
           "name": "dejagnu",
-          "version": "1.6.2",
-          "downloadUrl": "https://ftp.gnu.org/pub/gnu/dejagnu/dejagnu-1.6.2.tar.gz"
+          "version": "1.6.3",
+          "downloadUrl": "https://ftp.gnu.org/pub/gnu/dejagnu/dejagnu-1.6.3.tar.gz"
         }
       }
     },
@@ -1407,8 +1407,8 @@
         "type": "other",
         "other": {
           "name": "e2fsprogs",
-          "version": "1.45.6",
-          "downloadUrl": "https://prdownloads.sourceforge.net/e2fsprogs/e2fsprogs-1.45.6.tar.gz"
+          "version": "1.46.4",
+          "downloadUrl": "https://prdownloads.sourceforge.net/e2fsprogs/e2fsprogs-1.46.4.tar.gz"
         }
       }
     },
@@ -2139,8 +2139,8 @@
         "type": "other",
         "other": {
           "name": "groff",
-          "version": "1.22.3",
-          "downloadUrl": "http://ftp.gnu.org/gnu/groff/groff-1.22.3.tar.gz"
+          "version": "1.22.4",
+          "downloadUrl": "http://ftp.gnu.org/gnu/groff/groff-1.22.4.tar.gz"
         }
       }
     },
@@ -2959,8 +2959,8 @@
         "type": "other",
         "other": {
           "name": "libcap",
-          "version": "2.26",
-          "downloadUrl": "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.26.tar.xz"
+          "version": "2.60",
+          "downloadUrl": "https://www.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.60.tar.xz"
         }
       }
     },
@@ -5962,8 +5962,8 @@
         "type": "other",
         "other": {
           "name": "psmisc",
-          "version": "23.2",
-          "downloadUrl": "http://prdownloads.sourceforge.net/psmisc/psmisc-23.2.tar.xz"
+          "version": "23.4",
+          "downloadUrl": "http://prdownloads.sourceforge.net/psmisc/psmisc-23.4.tar.xz"
         }
       }
     },
@@ -8783,8 +8783,8 @@
         "type": "other",
         "other": {
           "name": "tcl",
-          "version": "8.6.8",
-          "downloadUrl": "http://downloads.sourceforge.net/sourceforge/tcl/tcl-core8.6.8-src.tar.gz"
+          "version": "8.6.12",
+          "downloadUrl": "http://downloads.sourceforge.net/sourceforge/tcl/tcl-core8.6.12-src.tar.gz"
         }
       }
     },

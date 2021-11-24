@@ -484,17 +484,17 @@ popd
 rm -rf ncurses-6.2
 touch /logs/status_ncurses_complete
 
-echo Libcap-2.26
-tar xf libcap-2.26.tar.xz
-pushd libcap-2.26
+echo libcap-2.60
+tar xf libcap-2.60.tar.xz
+pushd libcap-2.60
 sed -i '/install.*STALIBNAME/d' libcap/Makefile
 make -j$(nproc)
 make RAISE_SETFCAP=no lib=lib prefix=/usr install
-chmod -v 755 /usr/lib/libcap.so.2.26
+chmod -v 755 /usr/lib/libcap.so.2.60
 #mv -v /usr/lib/libcap.so.* /lib
 #ln -sfv ../../lib/$(readlink /usr/lib/libcap.so) /usr/lib/libcap.so
 popd
-rm -rf libcap-2.26
+rm -rf libcap-2.60
 touch /logs/status_libcap_complete
 
 echo Sed-4.8
@@ -851,15 +851,15 @@ popd
 rm -rf findutils-4.8.0
 touch /logs/status_findutils_complete
 
-echo Groff-1.22.3
-tar xf groff-1.22.3.tar.gz
-pushd groff-1.22.3
+echo Groff-1.22.4
+tar xf groff-1.22.4.tar.gz
+pushd groff-1.22.4
 PAGE=letter ./configure --prefix=/usr
 # Build with single processor due to errors seen with parallel make
 make -j1
 make install
 popd
-rm -rf groff-1.22.3
+rm -rf groff-1.22.4
 touch /logs/status_groff_complete
 
 echo Gzip-1.11
