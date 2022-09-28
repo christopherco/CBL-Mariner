@@ -1,7 +1,7 @@
 Summary:        Utilities for file systems, consoles, partitions, and messages
 Name:           util-linux
 Version:        2.37.4
-Release:        4%{?dist}
+Release:        5%{?dist}
 License:        GPLv2+
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -11,6 +11,7 @@ Source0:        https://mirrors.edge.kernel.org/pub/linux/utils/%{name}/v2.37/%{
 Source1:        runuser
 Source2:        runuser-l
 Source3:        su
+Patch0:         libblkid-src-probe-check-for-ENOMEDIUM.patch
 BuildRequires:  audit-devel
 BuildRequires:  libcap-ng-devel
 BuildRequires:  libselinux-devel
@@ -64,7 +65,7 @@ Group:          Development/Libraries
 These are library files of util-linux.
 
 %prep
-%setup -q
+%autosetup -p1
 sed -i -e 's@etc/adjtime@var/lib/hwclock/adjtime@g' $(grep -rl '%{_sysconfdir}/adjtime' .)
 
 %build
@@ -149,6 +150,9 @@ rm -rf %{buildroot}/lib/systemd/system
 %{_mandir}/man3/*
 
 %changelog
+* Tue Sep 27 2022 Chris Co <chrco@microsoft.com> - 2.37.4-5
+- Add patch to prevent cdrom probe on Azure VMs
+
 * Wed Jul 20 2022 Minghe Ren <mingheren@microsoft.com> - 2.37.4-4
 - Modify su to improve security
 - Change file permission on mount and umount to improve security
