@@ -1,0 +1,16 @@
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        
+      - name: All files end with newline
+      - run: find . -type f | xargs -L1 bash -c 'test "$(tail -c1 "$0")" && echo "No newline at end of $0"'
