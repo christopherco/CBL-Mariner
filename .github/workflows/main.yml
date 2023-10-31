@@ -1,3 +1,5 @@
+name: newlines
+
 on:
   push:
     branches: [ '**' ]
