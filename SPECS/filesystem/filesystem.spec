@@ -1,7 +1,7 @@
 Summary:      Default file system
 Name:         filesystem
 Version:      1.1
-Release:      19%{?dist}
+Release:      1000%{?dist}
 License:      GPLv3
 Group:        System Environment/Base
 Vendor:       Microsoft Corporation
@@ -556,10 +556,15 @@ posix.symlink("../.dwz", "/usr/lib/debug/usr/.dwz")
 return 0
 
 %pretrans -p <lua>
+print('Hello from Lua')
 posix.mkdir("/proc")
+print('1')
 posix.mkdir("/sys")
+print('2')
 posix.chmod("/proc", 0555)
+print('3')
 posix.chmod("/sys", 0555)
+print('4')
 
 # Prior to filesystem-1.1-16, /media used to be a symlink to /run/media but this was
 # replaced with a directory. The RPM upgrade operation generally worked when the /media
@@ -574,7 +579,10 @@ posix.chmod("/sys", 0555)
 #
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/Directory_Replacement
 path = "/media"
+print(path)
 st = posix.stat(path)
+print(st)
+print(st.type)
 if st and st.type == "link" then
   os.remove(path)
 end
@@ -732,7 +740,7 @@ return 0
 %config(noreplace) /etc/modprobe.d/tipc.conf
 
 %changelog
-* Fri Dec 08 2023 Chris Co <chrco@microsoft.com> - 1.1-19
+* Fri Dec 08 2023 Chris Co <chrco@microsoft.com> - 1.1-1000
 - Add scriptlet to handle /media symlink failed upgrade issue
 
 * Thu Dec 07 2023 Dan Streetman <ddstreet@ieee.org> - 1.1-18
