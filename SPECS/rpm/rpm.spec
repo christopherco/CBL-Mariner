@@ -1,7 +1,7 @@
 Summary:        Package manager
 Name:           rpm
 Version:        4.18.0
-Release:        4%{?dist}
+Release:        1000%{?dist}
 License:        GPLv2+ AND LGPLv2+ AND BSD
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -135,6 +135,7 @@ sed -i 's/extra_link_args/library_dirs/g' python/setup.py.in
     --disable-static \
     --with-vendor=mariner \
     --enable-python \
+    --with-lua \
     --with-cap \
     --disable-silent-rules \
     --with-selinux \
@@ -281,7 +282,7 @@ popd
 %{python3_sitelib}/*
 
 %changelog
-* Wed Sep 20 2023 Jon Slobodzian <joslobo@microsoft.com> - 4.18.0-4
+* Wed Sep 20 2023 Jon Slobodzian <joslobo@microsoft.com> - 4.18.0-1000
 - Recompile with stack-protection fixed gcc version (CVE-2023-4039)
 
 * Thu Jun 15 2023 Andrew Phelps <anphel@microsoft.com> - 4.18.0-3
