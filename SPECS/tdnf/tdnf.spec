@@ -5,7 +5,7 @@
 Summary:        dnf/yum equivalent using C libs
 Name:           tdnf
 Version:        3.5.2
-Release:        1000%{?dist}
+Release:        1001%{?dist}
 License:        LGPLv2.1 AND GPLv2
 Vendor:         Microsoft Corporation
 Distribution:   Mariner
@@ -170,7 +170,7 @@ fi
 # not package build. Some workloads want to disable tdnf, so
 # decision should not be made during build but during install
 # of package.
-if [ ! -h $(rpm --eval %{_bindir})/yum ] || [$(readlink $(rpm --eval %{_bindir})/yum) == $(rpm --eval %{_bindir})/tdnf]; then
+if [[ ! -h $(rpm --eval %{_bindir})/yum ] || [ $(readlink $(rpm --eval %{_bindir})/yum) == $(rpm --eval %{_bindir})/tdnf ]]; then
 ln -sf $(rpm --eval %{_bindir})/tdnf $(rpm --eval %{_bindir})/yum
 fi
 
@@ -236,7 +236,7 @@ fi
 /%{_lib}/systemd/system/tdnf*
 
 %changelog
-* Fri Oct 06 2023 Andy Zaugg <azaugg@linkedin.com> - 3.5.2-1000
+* Fri Oct 06 2023 Andy Zaugg <azaugg@linkedin.com> - 3.5.2-1001
 - tdnf should only become default if a backend package manager has not previously been defined
 
 * Thu Jun 15 2023 Sam Meluch <sammeluch@microsoft.com> - 3.5.2-2
