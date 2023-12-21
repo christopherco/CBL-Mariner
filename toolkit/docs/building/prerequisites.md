@@ -3,7 +3,7 @@
 
 ## CBL-Mariner
 
-Build Requirements on CBL-Mariner listed [here](./prerequisites-mariner.md).
+Build Requirements on Azure Linux listed [here](./prerequisites-mariner.md).
 
 
 ## Ubuntu
