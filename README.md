@@ -1,4 +1,4 @@
-# Azure Linux
+# Azure Linux Test
 
 Azure Linux is an internal Linux distribution for Microsoft’s cloud infrastructure and edge products and services. Azure Linux is designed to provide a consistent platform for these devices and services and will enhance Microsoft’s ability to stay current on Linux updates. This initiative is part of Microsoft’s increasing investment in a wide range of Linux technologies, such as [SONiC](https://azure.microsoft.com/en-us/blog/sonic-the-networking-switch-software-that-powers-the-microsoft-global-cloud/) and [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about). Azure Linux is being shared publicly as part of Microsoft’s commitment to Open Source and to contribute back to the Linux community. Azure Linux does not change our approach or commitment to any existing third-party Linux distribution offerings.
 
