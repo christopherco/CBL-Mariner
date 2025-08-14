@@ -99,7 +99,6 @@ os:
       # servicing
       # - trident
       # - trident-service
-      - veritysetup
       # OCI
       - cni
       - containerd2
