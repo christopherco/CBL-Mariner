@@ -1,5 +1,5 @@
 #
-# Base project
+# Azure Linux 4.0 base project
 #
 
 includes = ["comps/components.toml", "images/images.toml"]
