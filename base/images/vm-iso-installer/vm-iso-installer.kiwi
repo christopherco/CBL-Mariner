@@ -2,7 +2,7 @@
 <?xml-model
     href="https://raw.githubusercontent.com/OSInside/kiwi/refs/tags/v10.2.33/kiwi/schema/kiwi.rng"
     type="application/xml"?>
-<image schemaversion="8.3" name="azl4-iso-installer">
+<image schemaversion="8.3" name="azl4-iso-installer-test">
     <description type="system">
         <author>Azure Linux</author>
         <contact>azurelinux@microsoft.com</contact>
@@ -12,7 +12,7 @@
         <profile name="vm-iso-installer" description="Azure Linux ISO Installer" import="false" />
     </profiles>
     <preferences>
-        <version>0.1</version>
+        <version>0.1.20260914</version>
         <packagemanager>dnf5</packagemanager>
         <locale>en_US</locale>
         <keytable>us</keytable>
