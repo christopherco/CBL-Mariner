@@ -58,6 +58,19 @@ jobs:
           set -euo pipefail
           bash scripts/copilot/run.sh readiness
 
+      - name: Prepare issue triage repro tiers
+        run: |
+          set -euo pipefail
+          bash scripts/copilot/triage/setup-host.sh
+          bash scripts/copilot/triage/repro.sh probe
+          {
+            echo '## Issue triage repro tiers'
+            echo
+            echo '```json'
+            cat base/build/work/scratch/triage/env.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Record the session execution path
         run: |
           set -euo pipefail

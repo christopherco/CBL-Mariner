@@ -1,0 +1,73 @@
+name: "Copilot Triage Tier Spike"
+
+# Exercises every issue-triage repro tier (T0 static, T1 container,
+# T2 systemd container, T3 QEMU boot) on the same runner type that hosts
+# Copilot cloud sessions, and publishes per-tier verdicts and timings.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/copilot/triage/**"
+      - ".github/workflows/copilot-triage-spike.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  tiers:
+    name: "Run triage repro tiers"
+    runs-on: ubuntu-latest
+    timeout-minutes: 59
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build Copilot session images
+        run: |
+          set -euo pipefail
+          version="$(tr -d '\n' < .azldev-version)"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9A-Za-z._+-]+$'; then
+            echo "::error::.azldev-version is empty or contains unexpected characters"
+            exit 1
+          fi
+          docker build --build-arg UID="$(id -u)" --build-arg AZLDEV_VERSION="$version" \
+            -t localhost/azldev-runner \
+            -f .github/workflows/containers/azldev-runner.Dockerfile \
+            .github/workflows/containers/
+          docker build --build-arg AZLDEV_VERSION="$version" \
+            -t localhost/copilot-ci \
+            -f .github/workflows/containers/copilot-ci.Dockerfile \
+            .github/workflows/containers/
+
+      - name: Prepare runner
+        run: |
+          set -euo pipefail
+          bash scripts/copilot/triage/setup-host.sh
+
+      - name: Run all tiers
+        run: |
+          set -euo pipefail
+          rc=0
+          bash scripts/copilot/triage/test.sh || rc=$?
+          {
+            echo '## Triage repro tiers'
+            echo
+            cat base/build/work/scratch/triage/selftest/summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: triage-tier-evidence
+          path: base/build/work/scratch/triage/selftest/
+          if-no-files-found: warn
+          retention-days: 7
