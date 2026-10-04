@@ -66,6 +66,18 @@ Choose the **lowest** tier that can observe the behavior:
 
 Containers run on the **host's** kernel. Never draw kernel conclusions from T0, T1 or T2.
 
+Known artifacts of the harness. Do not report these as distro bugs unless the issue
+is specifically about them:
+- `core:4` is minimal; tools like `cmp`/`diff` (diffutils), `ps` and `ip` are
+  absent. Install what the repro needs with `--packages`, or use bash builtins.
+- In T2, `systemd-resolved` and its sockets fail because of the container, so the
+  system state is `degraded`.
+- In T3, the guest has no grub, cloud-init or WALinuxAgent, and only user-mode
+  (SLIRP) networking.
+- `--pytest` in T0 uses the host's Ubuntu `rpm`, which misreads the Azure Linux
+  rpmdb (missing packages, no sizes). Trust the `rpm-qa.txt` produced inside the
+  helper instead.
+
 Write the repro as a bash script in `base/build/work/scratch/triage/repro.sh`.
 The script must print exactly one line `TRIAGE_VERDICT=reproduced`,
 `TRIAGE_VERDICT=not-reproduced` or `TRIAGE_VERDICT=inconclusive`. In `static`

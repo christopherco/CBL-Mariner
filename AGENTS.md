@@ -47,6 +47,13 @@ trust fail explicitly; readiness alone is not build success. This rollout is
 tested for x86_64 Azure Linux 4.0-stage2 only; other targets and image/VM workflows
 are unverified. Default-branch activation is a separate reviewer action.
 
+For issues about distro behavior, use the `distro-issue-triage` agent
+(`.github/agents/distro-issue-triage.agent.md`). It reproduces issues against
+`mcr.microsoft.com/azurelinux/core:4` through `scripts/copilot/triage/repro.sh`,
+which has these tiers: `static`, `container`, `systemd` and `vm` (QEMU/KVM).
+Setup steps prepare the host for them. Azure platform, WSL integration and ISO
+installer behavior are handed off rather than run.
+
 ## Mandatory Testing
 
 > **USE YOUR BEST JUDGEMENT**, but when in doubt, test. If your change could affect the built RPMs, smoke-test before reporting success. See [`azldev-mock`](.agents/skills/azldev-mock/SKILL.md).
