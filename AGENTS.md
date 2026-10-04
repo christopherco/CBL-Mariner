@@ -47,6 +47,120 @@ trust fail explicitly; readiness alone is not build success. This rollout is
 tested for x86_64 Azure Linux 4.0-stage2 only; other targets and image/VM workflows
 are unverified. Default-branch activation is a separate reviewer action.
 
+### Finalizing cloud contribution history
+
+Before starting work or making commits, read [`CONTRIBUTING.md`](CONTRIBUTING.md)
+and [`.cz.toml`](.cz.toml). Azure Linux uses a patch-series workflow with
+**rebase-merge**, not squash-merge: every final commit must be a meaningful,
+self-contained logical change, ideally a single commit for a focused PR.
+Use only `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
+`chore`, or `revert`; `update` is not an allowed type. Choose the type by the
+change's primary motivation: use `chore` for a routine component version or
+upstream-reference refresh, `fix` for a specific bug or security correction,
+and `feat` for a newly supported capability. Keep an indivisible version bump
+under one type rather than splitting it by incidental effects. For example:
+
+```text
+chore(containerd): upgrade to 2.2.8
+
+Refresh the Fedora 43 reference to its 2.2.8 release. Explain why the update is
+needed and any compatibility implications or relevant upstream context.
+```
+
+Write a substantive body explaining why and any compatibility or behavioral
+implications for each logical change; attribution/agent trailers alone are not
+a body. Preserve authorship and co-author trailers when folding commits.
+Repository guidance in `CONTRIBUTING.md` and the allowed types in `.cz.toml`
+take precedence over generic commit-message examples in linked skills. In
+particular, translate generated `update(<name>)` examples to the appropriate
+allowed type, using `chore` for a routine refresh. The linked generated
+`azldev-update-component` skill's example has not been changed here; correcting
+its source/generated documentation is separate upstream tool work.
+
+The platform may create an `Initial plan` commit before the agent can act.
+Treat it as temporary, not something these instructions can prevent. Inspect
+its author, parent/tree, and diff: remove it only after verifying it is an
+**empty, agent-created plan commit**. Do not merely rename it to pass the
+header checker. A nonempty or ambiguously owned commit needs inspection and,
+if ownership cannot be established, maintainer handoff rather than deletion.
+Fold agent progress, review fixes, and rendered-spec/changelog corrections into
+the logical change they complete. Preserve unrelated and human changes.
+
+For this finalization only, agents are authorized to amend/rebase their own
+agent-owned contribution branch and lease-guarded force-push that branch.
+This is not permission to rewrite a default/target branch or another
+contributor's history. Inspect local changes and remote branch history first;
+record the remote head SHA before rewriting. Recheck remote/concurrent updates
+before pushing, and stop for coordination if ownership or new changes are
+uncertain. Use an explicit lease against that inspected SHA, never plain
+`--force`; a rejected lease requires renewed inspection, not a blind retry.
+
+Determine the actual PR base repository/ref and head repository/ref from PR
+metadata, for example:
+
+```sh
+gh api "repos/$PR_REPO/pulls/$PR" \
+  --jq '{base_repo: .base.repo.clone_url, base_ref: .base.ref, head_repo: .head.repo.full_name, head_ref: .head.ref}'
+```
+
+Set `BASE_REPO_URL` and `BASE_REF` from those verified values, not a hardcoded
+`origin/4.0` (fork defaults can differ). Before a PR exists, verify the intended
+target from repository metadata and the user's request, then confirm the
+created PR's base. Fetch the base, record its tip, and compute the PR merge-base:
+
+```sh
+git fetch "$BASE_REPO_URL" "$BASE_REF"
+BASE_TIP=$(git rev-parse FETCH_HEAD)
+BASE=$(git merge-base "$BASE_TIP" HEAD)
+```
+
+Rebase onto `BASE_TIP` rather than merging the target branch. Clean up only
+verified agent-owned commits as described above, then recompute `BASE`.
+Inspect the **entire** `BASE..HEAD` range with `git log` and each commit's
+`git show`, not just the tip: no empty placeholders, merge commits, WIP,
+`fixup!`/`squash!`/`amend!`, or standalone "address review feedback" commits
+may remain. Header syntax checks do not establish meaningful changes or bodies.
+Run the existing strict checker over that same full range:
+
+```sh
+pre-commit run commitizen-branch --hook-stage pre-push --from-ref "$BASE" --to-ref HEAD
+```
+
+For a new logical component change, follow
+[`azldev-update-component`](.agents/skills/azldev-update-component/SKILL.md):
+update locks, render, commit the inputs and generated output together, then
+render after the commit and amend the generated output into that same commit.
+
+When cleaning up existing component history, stop/edit at **each affected
+logical component commit** during the rebase. Refresh locks and render for its
+affected components, stage the results, and amend the existing commit rather
+than creating a standalone generated-output correction. Render again after
+amending and repeat render/stage/amend until locks and rendered output are
+consistent and a fresh render leaves no uncommitted component output, then
+continue the rebase. A multi-commit series needs this consistency at each
+logical commit, not just at the tip. After the rebase, recompute `BASE`, inspect
+and check the full final range again, and confirm a fresh render of all affected
+components leaves their committed output unchanged.
+
+Use `scripts/copilot/run.sh` for container commands above; rebuild, inspect,
+and smoke-test the resulting RPMs when RPM output changes. Pure docs changes
+do not require a component rebuild.
+
+Once the final range is checked and remote updates have been inspected, push
+only the verified contribution head (set `HEAD_REMOTE`, `HEAD_REF`, and
+`EXPECTED_HEAD` to that remote, PR head ref, and previously inspected SHA):
+
+```sh
+git push --force-with-lease="refs/heads/$HEAD_REF:$EXPECTED_HEAD" \
+  "$HEAD_REMOTE" "HEAD:refs/heads/$HEAD_REF"
+```
+
+If cloud tools or permissions prevent history cleanup, report **not merge-ready**
+and give the maintainer the exact branch/SHAs, commits to remove or fold,
+required messages, and remaining render/validation/push steps. Do not weaken
+CI/checker configuration or claim cloud history rewriting is proven merely
+because these requirements are documented.
+
 ## Mandatory Testing
 
 > **USE YOUR BEST JUDGEMENT**, but when in doubt, test. If your change could affect the built RPMs, smoke-test before reporting success. See [`azldev-mock`](.agents/skills/azldev-mock/SKILL.md).
