@@ -1,5 +1,10 @@
 # Azure Linux — Copilot Instructions
 
+Before working or committing, read [`CONTRIBUTING.md`](../CONTRIBUTING.md) and
+[`.cz.toml`](../.cz.toml). For cloud PR history cleanup, full-range checks, and
+scoped rewrite authorization, follow
+[`Finalizing cloud contribution history`](../AGENTS.md#finalizing-cloud-contribution-history).
+
 Azure Linux is a TOML-defined Linux distribution that imports RPM specs from upstream distros (primarily Fedora) and customizes them via an **overlay system** — no spec forking required. The `azldev` CLI tool drives all component and image workflows.
 
 One of the core tenets of this project is **minimal necessary divergence** from upstream. Overlays should be surgical and only change what's needed to meet Azure Linux requirements. Upstream packages should be preferred over bespoke components, and local specs should be a last resort. This keeps maintenance overhead low and makes it easier to pull in new versions and security updates from upstream.
