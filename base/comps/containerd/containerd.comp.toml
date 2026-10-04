@@ -1,0 +1,4 @@
+[components.containerd]
+# Pin the latest Fedora 43 reference without changing the distro-wide snapshot.
+# https://src.fedoraproject.org/rpms/containerd/c/eca156dea642174bcb705705a9c163983416706b?branch=f43
+spec = { type = "upstream", upstream-distro = { name = "fedora", version = "43" }, upstream-commit = "eca156dea642174bcb705705a9c163983416706b" }
