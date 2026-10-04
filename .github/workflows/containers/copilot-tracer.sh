@@ -20,8 +20,16 @@ include('/workdir/distro/mock/azl4/stage2/azurelinux-4.0.tpl')
 config_opts['dnf.conf'] = config_opts['dnf.conf'].replace(
     '[main]', '[main]\nsslcacert=/etc/ssl/certs/ca-certificates.crt\nsslverify=1', 1)
 config_opts['bootstrap_dnf.conf'] = config_opts['dnf.conf']
+# Mock provisions this public CA before package installation in both roots.
+# Use an ordinary file, not the firewall-managed system certificate mounts.
+with open('/etc/ssl/certs/ca-certificates.crt') as ca_bundle:
+    config_opts['files']['etc/copilot-tracer/proxy-ca.pem'] = ca_bundle.read()
+config_opts['dnf.conf'] = config_opts['dnf.conf'].replace(
+    'sslcacert=/etc/ssl/certs/ca-certificates.crt',
+    'sslcacert=/etc/copilot-tracer/proxy-ca.pem',
+)
 config_opts['dnf5_common_opts'] += [
-    '--setopt=sslcacert=/etc/ssl/certs/ca-certificates.crt',
+    '--setopt=sslcacert=/etc/copilot-tracer/proxy-ca.pem',
     '--setopt=sslverify=1',
 ]
 MOCK
@@ -58,6 +66,8 @@ diagnose() {
             rpm -q dnf5 libdnf5 curl curl-libs openssl ca-certificates
             ls -l /etc/ssl/certs/ca-certificates.crt
             sha256sum /etc/ssl/certs/ca-certificates.crt
+            ls -l /etc/copilot-tracer/proxy-ca.pem
+            sha256sum /etc/copilot-tracer/proxy-ca.pem
             grep -nE "sslcacert|sslverify|baseurl|reposdir" /etc/dnf/dnf.conf
             dnf5 --version
             dnf5 --dump-main-config
@@ -71,7 +81,7 @@ diagnose() {
                     https://packages.microsoft.com/azurelinux/4.0/beta/base/x86_64/repodata/repomd.xml
                 printf "Bootstrap verified curl exit=%s\n" "$?"
             fi
-            dnf5 --releasever 4.0 --setopt=sslcacert=/etc/ssl/certs/ca-certificates.crt \
+            dnf5 --releasever 4.0 --setopt=sslcacert=/etc/copilot-tracer/proxy-ca.pem \
                 --setopt=sslverify=1 --repo=base --refresh makecache
             printf "Direct bootstrap DNF5 exit=%s\n" "$?"
         '
