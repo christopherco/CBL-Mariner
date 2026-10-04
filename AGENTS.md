@@ -31,6 +31,8 @@ the regression tracer, not normal setup.
 
 Current-session public CA trust is read by the container entrypoint and mock user
 config at command time, **after** firewall injection. No CA is baked into the image.
+Copied CA filenames, mock roots and root caches are keyed by CA contents so trust
+rotation does not reuse stale retained/restored state; old roots are not deleted.
 Keep the agent firewall, proxy and TLS verification enabled. Ask for missing
 source domains to be allowlisted; do not bypass blocked downloads, managed CA
 mounts, or permissions. The wrapper uses only the established mock capability

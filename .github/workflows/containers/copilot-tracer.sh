@@ -11,6 +11,8 @@ test "${GIT_SSL_CAINFO:-}" = /etc/ssl/certs/ca-certificates.crt
 test -r "$GIT_SSL_CAINFO"
 config=/workdir/distro/mock/azl4/stage2/azurelinux-4.0-x86_64.cfg
 configdir=$(dirname "$config")
+ca_digest=$(sha256sum "$GIT_SSL_CAINFO" | cut -d ' ' -f 1)
+ca_target="/etc/copilot-session/proxy-ca-$ca_digest.pem"
 
 diagnose() {
     local rc=$?
@@ -33,8 +35,9 @@ diagnose() {
         "$scratch/mock-effective.config"
     # Host DNF4 can install diagnostic tools with the selected verified CA.
     # This does not substitute a repository dos2unix RPM.
+    # shellcheck disable=SC2016 # Expand the CA argument inside the chroot.
     mock -r "$config" --configdir "$configdir" --no-bootstrap-chroot \
-        --config-opts root=azl-4.0-stage2-x86_64-bootstrap \
+        --config-opts "root=azl-4.0-stage2-x86_64-copilot-$ca_digest-bootstrap" \
         --config-opts package_manager=dnf4 \
         --config-opts 'chroot_setup_cmd=install curl openssl' --chroot -- \
         bash -c '
@@ -42,12 +45,13 @@ diagnose() {
             rpm -q dnf5 libdnf5 curl curl-libs openssl ca-certificates
             ls -l /etc/ssl/certs/ca-certificates.crt
             sha256sum /etc/ssl/certs/ca-certificates.crt
-            ls -l /etc/copilot-session/proxy-ca.pem
-            sha256sum /etc/copilot-session/proxy-ca.pem
+            ls -l "$1"
+            sha256sum "$1"
             grep -nE "sslcacert|sslverify|baseurl|reposdir" /etc/dnf/dnf.conf
             dnf5 --version
             dnf5 --dump-main-config
             dnf5 --releasever 4.0 --dump-repo-config=base
+            dnf5 --releasever 4.0 --dump-repo-config=sdk
             if command -v curl; then
                 curl --version
                 curl --fail --silent --show-error \
@@ -57,10 +61,10 @@ diagnose() {
                     https://packages.microsoft.com/azurelinux/4.0/beta/base/x86_64/repodata/repomd.xml
                 printf "Bootstrap verified curl exit=%s\n" "$?"
             fi
-            dnf5 --releasever 4.0 --setopt=sslcacert=/etc/copilot-session/proxy-ca.pem \
+            dnf5 --releasever 4.0 --setopt="sslcacert=$1" \
                 --setopt=sslverify=1 --repo=base --refresh makecache
             printf "Direct bootstrap DNF5 exit=%s\n" "$?"
-        '
+        ' copilot-diagnostic "$ca_target"
     exit "$rc"
 }
 stage=environment
