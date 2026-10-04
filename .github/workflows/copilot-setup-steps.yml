@@ -3,10 +3,11 @@ name: "Copilot Setup Steps"
 on:
   workflow_dispatch:
   pull_request:
-    branches: ["4.0"]
     paths:
       - ".azldev-version"
       - ".github/workflows/containers/azldev-runner.Dockerfile"
+      - ".github/workflows/containers/copilot-*"
+      - "scripts/copilot/**"
       - ".github/workflows/copilot-setup-steps.yml"
 
 concurrency:
@@ -43,36 +44,35 @@ jobs:
             -f .github/workflows/containers/azldev-runner.Dockerfile \
             .github/workflows/containers/
 
+      - name: Build non-root session image
+        run: |
+          set -euo pipefail
+          docker build \
+            --build-arg AZLDEV_VERSION="$(tr -d '\n' < .azldev-version)" \
+            -t localhost/copilot-ci \
+            -f .github/workflows/containers/copilot-ci.Dockerfile \
+            .github/workflows/containers/
+
       - name: Confirm azldev can load the project
         run: |
           set -euo pipefail
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/workdir" \
-            localhost/azldev-runner \
-            bash -eu -o pipefail -c '
-              azldev --version
-              mock --version
-              mkdir -p base/build/work/scratch/copilot-setup
-              azldev comp list -a -q -O json \
-                > base/build/work/scratch/copilot-setup/component-list.json
-              jq -e "type == \"array\" and length > 0" \
-                base/build/work/scratch/copilot-setup/component-list.json
-            '
+          bash scripts/copilot/run.sh readiness
 
-      - name: Record the prototype execution path
+      - name: Record the session execution path
         run: |
           set -euo pipefail
           {
             echo '## Azure Linux cloud-session spike'
             echo
-            echo 'Image: `localhost/azldev-runner` (built from `.azldev-version`).'
-            echo 'Run azldev inside this image; it is not installed on the Ubuntu host.'
+            echo 'Image: `localhost/copilot-ci`, derived from the pinned azldev runner.'
+            echo 'Host: `bash scripts/copilot/run.sh azldev comp list -p dos2unix -q -O json`.'
+            echo 'Host smoke-test: `bash scripts/copilot/run.sh mock-shell --add-package /workdir/base/out/rpms/<channel>/<package>.rpm -- <command>`.'
             echo
             echo 'For builds and mock tests, bind-mount the checkout at `/workdir`,'
             echo 'preserve stdin with `-i`, and use `--cap-add=SYS_ADMIN`,'
             echo '`--security-opt seccomp=unconfined`, and'
             echo '`--security-opt apparmor=unconfined`.'
             echo
-            echo 'Setup has not built or smoke-tested an RPM.'
-            echo 'The assigned pilot issue must exercise that path in the actual cloud session.'
+            echo 'Trust is read at command time after firewall CA injection, not baked into the image.'
+            echo 'Setup readiness does not build or smoke-test an RPM.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -2,6 +2,51 @@
 
 For project context and architecture, see [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
+## Copilot cloud sessions (fork rollout)
+
+Setup prepares `localhost/copilot-ci` from the unchanged `.azldev-version` pin.
+azldev and mock are **container tools**, not Ubuntu host tools. From the checkout:
+
+```sh
+bash scripts/copilot/run.sh readiness
+bash scripts/copilot/run.sh azldev comp render -p <name> --fail-on-error
+bash scripts/copilot/run.sh azldev comp build -p <name>
+bash scripts/copilot/run.sh mock-shell --add-package /workdir/base/out/rpms/<channel>/<name>.rpm -- <binary> --version
+```
+
+For build/inspection/local-RPM testing in one disposable container, use
+`bash scripts/copilot/run.sh session` with a quoted heredoc. Inside, use ordinary
+`azldev` and `mock` commands from `/workdir`; host paths become `/workdir/...`.
+The wrapper preserves argument boundaries and stdin without a TTY. Each host
+invocation has a fresh mock root; group related commands into one session.
+The complete regression is:
+`bash scripts/copilot/run.sh session bash /workdir/.github/workflows/containers/copilot-tracer.sh`.
+Focused environment checks: `bash scripts/copilot/test.sh`.
+
+Keep scratch files/logs in the configured work directory (`base/build/work/scratch`
+for this project); RPM outputs are in `base/out`. Inspect exact local RPMs with
+`mock --copyin` and `rpm -qip`/`rpm -qlp` before testing. Never substitute repository
+packages or install Azure Linux RPMs on the host. Failure diagnostics belong in
+the regression tracer, not normal setup.
+
+Current-session public CA trust is read by the container entrypoint and mock user
+config at command time, **after** firewall injection. No CA is baked into the image.
+Copied CA filenames, mock roots and root caches are keyed by CA contents so trust
+rotation does not reuse stale retained/restored state; old roots are not deleted.
+Keep the agent firewall, proxy and TLS verification enabled. Ask for missing
+source domains to be allowlisted; do not bypass blocked downloads, managed CA
+mounts, or permissions. The wrapper uses only the established mock capability
+flags; never add `--privileged`, host credentials/home, or the Docker socket.
+Docker workloads are not comprehensively bounded by the agent firewall.
+
+Load the azldev/build/mock skills before packaging work. For component changes,
+refresh locks, render, build and smoke-test; after committing component inputs,
+re-render and amend so Release/changelog and lock checks match committed history.
+Do not commit pilot logs, RPMs, or session CA material. Missing/stale images or
+trust fail explicitly; readiness alone is not build success. This rollout is
+tested for x86_64 Azure Linux 4.0-stage2 only; other targets and image/VM workflows
+are unverified. Default-branch activation is a separate reviewer action.
+
 ## Mandatory Testing
 
 > **USE YOUR BEST JUDGEMENT**, but when in doubt, test. If your change could affect the built RPMs, smoke-test before reporting success. See [`azldev-mock`](.agents/skills/azldev-mock/SKILL.md).
