@@ -7,34 +7,10 @@ cd /workdir
 scratch=/workdir/base/build/work/scratch/copilot-tracer
 mkdir -p "$scratch"
 exec > >(tee "$scratch/ci-like-session.log") 2>&1
-export GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
+test "${GIT_SSL_CAINFO:-}" = /etc/ssl/certs/ca-certificates.crt
 test -r "$GIT_SSL_CAINFO"
-config="$scratch/ci-like.cfg"
-override="$scratch/ci-like.toml"
-
-# Keep the stage2 template and all distro defaults; only select the existing CA.
-cat > "$config" <<'MOCK'
-config_opts['target_arch'] = 'x86_64'
-config_opts['legal_host_arches'] = ('x86_64',)
-include('/workdir/distro/mock/azl4/stage2/azurelinux-4.0.tpl')
-config_opts['dnf.conf'] = config_opts['dnf.conf'].replace(
-    '[main]', '[main]\nsslcacert=/etc/ssl/certs/ca-certificates.crt\nsslverify=1', 1)
-config_opts['bootstrap_dnf.conf'] = config_opts['dnf.conf']
-# Mock provisions this public CA before package installation in both roots.
-# Use an ordinary file, not the firewall-managed system certificate mounts.
-with open('/etc/ssl/certs/ca-certificates.crt') as ca_bundle:
-    config_opts['files']['etc/copilot-tracer/proxy-ca.pem'] = ca_bundle.read()
-config_opts['dnf.conf'] = config_opts['dnf.conf'].replace(
-    'sslcacert=/etc/ssl/certs/ca-certificates.crt',
-    'sslcacert=/etc/copilot-tracer/proxy-ca.pem',
-)
-config_opts['dnf5_common_opts'] += [
-    '--setopt=sslcacert=/etc/copilot-tracer/proxy-ca.pem',
-    '--setopt=sslverify=1',
-]
-MOCK
-sed 's|"mock/azl4/stage2/azurelinux-4.0-x86_64.cfg"|"/workdir/base/build/work/scratch/copilot-tracer/ci-like.cfg"|' \
-    /workdir/distro/azurelinux.distro.toml > "$override"
+config=/workdir/distro/mock/azl4/stage2/azurelinux-4.0-x86_64.cfg
+configdir=$(dirname "$config")
 
 diagnose() {
     local rc=$?
@@ -51,13 +27,13 @@ diagnose() {
         --connect-timeout 15 --max-time 30 -o /dev/null \
         -w 'Runner verified curl HTTP=%{http_code}\n' "$url"
     printf 'Runner verified curl exit=%s\n' "$?"
-    mock -r "$config" --configdir "$scratch" --debug-config \
+    mock -r "$config" --configdir "$configdir" --debug-config \
         > "$scratch/mock-effective.config"
     grep -A40 -E "^config_opts\['(bootstrap_dnf.conf|dnf.conf)'\]" \
         "$scratch/mock-effective.config"
     # Host DNF4 can install diagnostic tools with the selected verified CA.
     # This does not substitute a repository dos2unix RPM.
-    mock -r "$config" --configdir "$scratch" --no-bootstrap-chroot \
+    mock -r "$config" --configdir "$configdir" --no-bootstrap-chroot \
         --config-opts root=azl-4.0-stage2-x86_64-bootstrap \
         --config-opts package_manager=dnf4 \
         --config-opts 'chroot_setup_cmd=install curl openssl' --chroot -- \
@@ -66,8 +42,8 @@ diagnose() {
             rpm -q dnf5 libdnf5 curl curl-libs openssl ca-certificates
             ls -l /etc/ssl/certs/ca-certificates.crt
             sha256sum /etc/ssl/certs/ca-certificates.crt
-            ls -l /etc/copilot-tracer/proxy-ca.pem
-            sha256sum /etc/copilot-tracer/proxy-ca.pem
+            ls -l /etc/copilot-session/proxy-ca.pem
+            sha256sum /etc/copilot-session/proxy-ca.pem
             grep -nE "sslcacert|sslverify|baseurl|reposdir" /etc/dnf/dnf.conf
             dnf5 --version
             dnf5 --dump-main-config
@@ -81,7 +57,7 @@ diagnose() {
                     https://packages.microsoft.com/azurelinux/4.0/beta/base/x86_64/repodata/repomd.xml
                 printf "Bootstrap verified curl exit=%s\n" "$?"
             fi
-            dnf5 --releasever 4.0 --setopt=sslcacert=/etc/copilot-tracer/proxy-ca.pem \
+            dnf5 --releasever 4.0 --setopt=sslcacert=/etc/copilot-session/proxy-ca.pem \
                 --setopt=sslverify=1 --repo=base --refresh makecache
             printf "Direct bootstrap DNF5 exit=%s\n" "$?"
         '
@@ -95,12 +71,12 @@ azldev --version
 printf 'GIT_SSL_CAINFO=%s\n' "$GIT_SSL_CAINFO"
 azldev comp build --help
 azldev adv mock shell --help
-azldev --config-file "$override" comp list -p dos2unix -q -O json
+azldev comp list -p dos2unix -q -O json
 stage=render
-azldev --config-file "$override" comp render -p dos2unix --fail-on-error
+azldev comp render -p dos2unix --fail-on-error
 stage=build
 touch "$scratch/build-start"
-azldev --config-file "$override" comp build -p dos2unix
+azldev comp build -p dos2unix
 stage=select-local-rpm
 mapfile -t rpms < <(find /workdir/base/out/rpms -type f \
     -name 'dos2unix-[0-9]*.x86_64.rpm' -newer "$scratch/build-start" -print)
@@ -112,8 +88,8 @@ rpm_path=${rpms[0]}
 printf 'LOCAL_RPM=%s\n' "$rpm_path"
 sha256sum "$rpm_path"
 stage=test-root-init
-mock -r "$config" --configdir "$scratch" --init
-mock -r "$config" --configdir "$scratch" --copyin "$rpm_path" /tmp/
+mock -r "$config" --configdir "$configdir" --init
+mock -r "$config" --configdir "$configdir" --copyin "$rpm_path" /tmp/
 copied_rpm="/tmp/$(basename "$rpm_path")"
 stage=inspect-local-rpm
 azldev adv mock shell -c "$config" -- rpm -qip "$copied_rpm"
