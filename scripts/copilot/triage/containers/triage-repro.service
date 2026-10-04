@@ -1,0 +1,15 @@
+[Unit]
+Description=Azure Linux issue triage reproduction
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'echo TRIAGE_REPRO_BEGIN; bash /opt/triage/repro.sh; echo "TRIAGE_REPRO_EXIT=$?"; echo TRIAGE_REPRO_END'
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/ttyS0
+TimeoutStartSec=infinity
+ExecStopPost=/usr/bin/systemctl poweroff --no-block
+
+[Install]
+WantedBy=multi-user.target
