@@ -284,8 +284,12 @@ do_systemd() {
             --security-opt apparmor=unconfined \
             -v "$out/repro.sh:/triage/repro.sh:ro" "$tag" >/dev/null
     fi
-    local state
-    state=$(timeout 120 "$rt" exec "$name" systemctl is-system-running --wait 2>/dev/null || true)
+    local state=unknown
+    for _ in $(seq 1 60); do
+        state=$("$rt" exec "$name" systemctl is-system-running 2>/dev/null || true)
+        case "$state" in running|degraded|maintenance|stopping) break ;; esac
+        sleep 2
+    done
     state=${state:-unknown}
     "$rt" exec "$name" systemctl --failed --no-legend --plain > "$out/failed-units.txt" 2>&1 || true
     # Packages were baked into the image, so exec_steps must not reinstall them.
