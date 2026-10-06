@@ -632,6 +632,7 @@ components = [
     "icoutils",
     "icu",
     "ignition",
+    "ignition-flatcar",
     "igvm",
     "ilbc",
     "ima-evm-utils",

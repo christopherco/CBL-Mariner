@@ -1,0 +1,9 @@
+[components.ignition-flatcar]
+spec = { type = "local", path = "ignition-flatcar.spec" }
+release = { calculation = "autorelease" }
+
+[[components.ignition-flatcar.source-files]]
+filename = "ignition-flatcar-2.22.0.tar.gz"
+hash = "fd9fbe28b77c0593c4ca3f7d08fcb46c56c29d8fd4365c37856b8ccfd178d3cbb44dbe15effcfada3da851bece893edfe2b4de2c4873a90c909322a8c806143a"
+hash-type = "SHA512"
+origin = { type = "download", uri = "https://github.com/coreos/ignition/archive/refs/tags/v2.22.0.tar.gz" }
