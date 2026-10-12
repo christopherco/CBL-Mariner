@@ -1,7 +1,4 @@
 %define release_name Four
-# Let's remove this prerelease_name before release, and next time we
-# can use the built-in prerelease logic (based on release number < 1)
-%define prerelease_name Beta
 %define is_evergreen 0
 
 # Define this to 1 for Branched releases prior to RC
@@ -36,7 +33,7 @@ Summary:        Azure Linux release files
 Name:           azurelinux-release
 Version:        4.0
 # TODO(azl): Review whether we can move back to autorelease (with conditional -p)
-Release:        32%{?dist}
+Release:        33%{?dist}
 License:        MIT
 URL:            https://aka.ms/azurelinux
 
@@ -437,6 +434,9 @@ install -Dm0644 %{SOURCE27} %{buildroot}%{_prefix}/lib/tmpfiles.d/azurelinux-sud
 install -Dm0644 %{SOURCE28} %{buildroot}%{_sysconfdir}/logrotate.d/azurelinux-sudo
 install -Dm0644 %{SOURCE29} %{buildroot}%{_prefix}/lib/sysusers.d/azurelinux-sugroup.conf
 %check
+grep -Fx 'VERSION="%{dist_version} (%{release_name})"' os-release
+grep -Fx 'PRETTY_NAME="Azure Linux %{dist_version} (%{release_name})"' os-release
+
 check_umask() {
     initial_umask="$1"
     expected_umask="$2"
@@ -529,6 +529,9 @@ test "$(/bin/sh -c 'umask 0022; . %{SOURCE34}; umask 0077; umask')" = 0077
 
 
 %changelog
+* Mon Oct 12 2026 Chris Co <chrco@microsoft.com> - 4.0-33
+- Remove the Beta label from os-release for all variants
+
 * Mon Oct 05 2026 Tobias Brick <tobiasb@microsoft.com> - 4.0-32
 - Configure secure root and default login-shell umasks for cloud systems
 
